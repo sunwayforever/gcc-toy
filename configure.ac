@@ -1109,6 +1109,10 @@ case "${target}" in
   h8300*-*-*)
     noconfigdirs="$noconfigdirs target-libgloss"
     ;;
+  toy-*-*)
+    noconfigdirs="$noconfigdirs ${libgcj} gdb sim"
+    noconfigdirs="$noconfigdirs bfd binutils opcodes gas ld";
+    ;;
   h8500-*-*)
     noconfigdirs="$noconfigdirs target-libgloss"
     ;;

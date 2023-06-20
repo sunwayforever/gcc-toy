@@ -520,6 +520,9 @@ riscv*)
 	extra_objs="riscv-builtins.o riscv-c.o riscv-sr.o riscv-shorten-memrefs.o"
 	d_target_objs="riscv-d.o"
 	;;
+toy*)
+	cpu_type=toy
+	;;
 rs6000*-*-*)
 	extra_options="${extra_options} g.opt fused-madd.opt rs6000/rs6000-tables.opt"
 	extra_objs="rs6000-string.o rs6000-p8swap.o rs6000-logue.o"
@@ -3586,6 +3589,10 @@ m32c-*-elf*)
 	c_target_objs="m32c-pragma.o"
 	cxx_target_objs="m32c-pragma.o"
  	;;
+toy-*-*)
+	gnu_ld=yes
+	gas=yes
+	;;
 *)
 	echo "*** Configuration ${target} not supported" 1>&2
 	exit 1

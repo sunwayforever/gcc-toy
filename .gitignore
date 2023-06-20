@@ -67,3 +67,6 @@ stamp-*
 /mpc*
 /gmp*
 /isl*
+
+build
+build_riscv

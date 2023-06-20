@@ -1,0 +1,10 @@
+#+TITLE: Toy RISC-V Backend
+#+AUTHOR: Wei Sun (孙伟)
+#+EMAIL: wei.sun@hexintek.com
+#+DATE: 2023-06-21 Wed 11:39
+#+CATEGORY:
+#+FILETAGS:
+
+* Toy RISC-V Backend
+
+** toy-1: 识别 target
