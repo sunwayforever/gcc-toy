@@ -1,7 +1,8 @@
 #!/bin/bash
+N=`nproc`
 if [[ -d "../build_riscv" ]]; then
     pushd ../build_riscv
-    make inhibit-libc=true all-gcc -j 30
+    make inhibit-libc=true all-gcc -j ${N}
     popd
 else
     mkdir ../build_riscv
@@ -14,6 +15,6 @@ else
                  --disable-libatomic --disable-libmudflap \
                  --disable-libssp --disable-libquadmath \
                  --disable-libgomp --disable-nls --disable-bootstrap --src=../
-    make inhibit-libc=true all-gcc -j 30
+    make inhibit-libc=true all-gcc -j ${N}
     popd
 fi

@@ -2,7 +2,7 @@
 #ifndef TOY_PROTOS_H
 #define TOY_PROTOS_H
 
-extern void toy_asm_out_constructor (rtx, int);
-extern void toy_asm_out_destructor (rtx, int);
-
+extern void toy_asm_out_constructor(rtx, int);
+extern void toy_asm_out_destructor(rtx, int);
+extern HOST_WIDE_INT toy_initial_elimination_offset(int from, int to);
 #endif  // TOY_PROTOS_H

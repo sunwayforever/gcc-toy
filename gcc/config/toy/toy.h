@@ -4,12 +4,13 @@
 
 #define DWARF2_DEBUGGING_INFO 1
 
-// 18 gpr + 18 fpr
-#define FIRST_PSEUDO_REGISTER 36
+// 18 gpr + 18 fpr + 2
+#define FIRST_PSEUDO_REGISTER 38
 
-#define FRAME_POINTER_REGNUM 8
-#define ARG_POINTER_REGNUM 10
+#define ARG_POINTER_REGNUM 36
+#define FRAME_POINTER_REGNUM 37
 #define STACK_POINTER_REGNUM 2
+#define HARD_FRAME_POINTER_REGNUM 8
 
 #define FUNCTION_ARG_REGNO_P(N) \
     (IN_RANGE((N), 10, 17) || IN_RANGE((N), 10 + 18, 17 + 18))
@@ -30,14 +31,14 @@ enum reg_class {
     { /* General registers.  */                               \
       1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,    \
       /* Floating-point registers.  */                        \
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    \
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0\
     }
 
 #define CALL_USED_REGISTERS						\
 { /* General registers.  */						\
   1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, \
   /* Floating-point registers.  */					\
-  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, \
+  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0 \
 }
 
 #define REG_CLASS_CONTENTS          \
@@ -45,7 +46,7 @@ enum reg_class {
   { 0x00000000, 0x00000000},	/* NO_REGS */                   \
   { 0xffffc000, 0x00000000},	/* GR_REGS */                   \
   { 0x00000000, 0xffffc000},	/* FP_REGS */                   \
-  { 0xffffc000, 0xffffc000}, /* ALL_REGS */		\
+  { 0xffffc000, 0xfffff000}, /* ALL_REGS */		\
 }
 #define REGISTER_NAMES						\
 { "zero","ra",  "sp",  "gp",  "tp",  "t0",  "t1",  "t2",	\
@@ -53,7 +54,7 @@ enum reg_class {
   "a6",  "a7",                                              \
   "ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7",	\
   "fs0", "fs1", "fa0", "fa1", "fa2", "fa3", "fa4", "fa5",	\
-  "fa6", "fa7", }
+  "fa6", "fa7", "arg", "vfp"}
 // clang-format off
 
 extern const enum reg_class toy_regno_to_class[];
@@ -62,8 +63,8 @@ extern const enum reg_class toy_regno_to_class[];
 // clang-format off
 #define ELIMINABLE_REGS                                   \
     {                                                     \
-        {ARG_POINTER_REGNUM, STACK_POINTER_REGNUM},       \
-        {FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM},     \
+        {ARG_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM},       \
+        {FRAME_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM},     \
     }
 // clang-format on
 
@@ -132,7 +133,8 @@ typedef struct {
     do {                                   \
     } while (0)
 
-#define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET)
+#define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET) \
+    (OFFSET) = toy_initial_elimination_offset(FROM, TO)
 
 #define DEFAULT_SIGNED_CHAR 0
 #define GLOBAL_ASM_OP "\t.globl\t"

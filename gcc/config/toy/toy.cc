@@ -49,12 +49,58 @@ const enum reg_class toy_regno_to_class[FIRST_PSEUDO_REGISTER] = {
 void toy_asm_out_constructor(rtx symbol, int priority) {}
 void toy_asm_out_destructor(rtx symbol, int priority) {}
 
-static bool toy_legitimate_address_p(
-    machine_mode mode, rtx x, bool strict_p) {
+static bool toy_legitimate_address_p(machine_mode mode, rtx x, bool strict_p) {
     return true;
 }
 
 #undef TARGET_LEGITIMATE_ADDRESS_P
 #define TARGET_LEGITIMATE_ADDRESS_P toy_legitimate_address_p
+
+void toy_print_operand(FILE *file, rtx x, int code) {
+    rtx operand = x;
+
+    switch (GET_CODE(operand)) {
+        case REG:
+            fprintf(file, "%s", reg_names[REGNO(operand)]);
+            return;
+
+        case MEM:
+            output_address(VOIDmode, XEXP(operand, 0));
+            return;
+
+        default:
+            if (CONSTANT_P(operand)) {
+                output_addr_const(file, operand);
+                return;
+            }
+    }
+}
+
+static void toy_print_operand_address(
+    FILE *file, machine_mode mode ATTRIBUTE_UNUSED, rtx x) {
+    switch (GET_CODE(x)) {
+        case REG:
+            fprintf(file, "0(%s)", reg_names[REGNO(x)]);
+            break;
+        case PLUS:
+            toy_print_operand(file, XEXP(x, 1), 0);
+            fprintf(file, "(%s)", reg_names[REGNO(XEXP(x, 0))]);
+            break;
+        default:
+            abort();
+    }
+}
+
+#define TARGET_PRINT_OPERAND toy_print_operand
+#define TARGET_PRINT_OPERAND_ADDRESS toy_print_operand_address
+
+static bool toy_can_eliminate(const int from ATTRIBUTE_UNUSED, const int to) {
+    return (to == HARD_FRAME_POINTER_REGNUM);
+}
+
+#define TARGET_CAN_ELIMINATE toy_can_eliminate
+
+HOST_WIDE_INT
+toy_initial_elimination_offset(int from, int to) { return 0; }
 
 struct gcc_target targetm = TARGET_INITIALIZER;

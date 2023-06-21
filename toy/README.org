@@ -8,3 +8,5 @@
 * Toy RISC-V Backend
 
 ** toy-1: 识别 target
+
+** toy-2: local variable
