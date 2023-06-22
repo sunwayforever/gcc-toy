@@ -47,6 +47,29 @@ along with GCC; see the file COPYING3.  If not see
 #include "internal-fn.h"
 #include "langhooks.h"
 
+struct optab_def
+{
+  const char *name;
+  const char *pattern;
+};
+
+#define OPTAB_CL(o, p, c, b, l)		{ #o, p },
+#define OPTAB_CX(o, p)
+#define OPTAB_CD(o, p)			{ #o, p },
+#define OPTAB_NL(o, p, c, b, s, l)		{ #o, p },
+#define OPTAB_NC(o, p, c)			{ #o, p },
+#define OPTAB_NX(o, p)
+#define OPTAB_VL(o, p, c, b, s, l)		{ #o, p },
+#define OPTAB_VC(o, p, c)			{ #o, p },
+#define OPTAB_VX(o, p)
+#define OPTAB_DC(o, p, c)			{ #o, p },
+#define OPTAB_D(o, p)			{ #o, p },
+
+optab_def optabs[] = {
+  { "unknown_optab", NULL},
+#include "optabs.def"
+};
+
 static void prepare_float_lib_cmp (rtx, rtx, enum rtx_code, rtx *,
 				   machine_mode *);
 static rtx expand_unop_direct (machine_mode, optab, rtx, rtx, int);
@@ -1477,6 +1500,7 @@ rtx
 expand_binop (machine_mode mode, optab binoptab, rtx op0, rtx op1,
 	      rtx target, int unsignedp, enum optab_methods methods)
 {
+  printf("expand_binop: %s\n", optabs[binoptab].name);
   enum optab_methods next_methods
     = (methods == OPTAB_LIB || methods == OPTAB_LIB_WIDEN
        ? OPTAB_WIDEN : methods);
