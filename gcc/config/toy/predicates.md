@@ -3,4 +3,4 @@
        (match_code "const_int")))
 
 (define_predicate "symbolic_operand"
-  (match_code "const,symbol_ref,label_ref"))
+  (match_code "symbol_ref,label_ref"))

@@ -3590,6 +3590,7 @@ m32c-*-elf*)
 	cxx_target_objs="m32c-pragma.o"
  	;;
 toy-*-*)
+	tm_file="${tm_file} elfos.h"
 	gnu_ld=yes
 	gas=yes
 	;;

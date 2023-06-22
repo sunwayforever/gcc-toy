@@ -125,9 +125,6 @@ typedef struct {
 #define ASM_OUTPUT_ALIGN(STREAM, LOG) fprintf(STREAM, "\t.align\t%d\n", (LOG))
 #define ASM_APP_ON " "
 #define ASM_APP_OFF " "
-#define ASM_OUTPUT_COMMON
-#define ASM_OUTPUT_SKIP
-#define ASM_OUTPUT_LOCAL
 
 #define FUNCTION_PROFILER(STREAM, LABELNO) \
     do {                                   \

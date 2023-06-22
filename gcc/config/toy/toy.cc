@@ -89,6 +89,9 @@ static void toy_print_operand_address(
         case SYMBOL_REF:
             output_addr_const(file, x);
             break;
+        case CONST:
+            toy_print_operand_address(file, mode, XEXP(x, 0));
+            break;
         default:
             abort();
     }
@@ -117,6 +120,16 @@ bool toy_legitimize_move(rtx dst, rtx src) {
             dst = gen_rtx_MEM(SImode, dst);
             legitimize = true;
         }
+        if (GET_CODE(symbol) == CONST) {
+            rtx plus = XEXP(symbol, 0);
+            if (GET_CODE(XEXP(plus, 0)) == SYMBOL_REF) {
+                rtx tmp = gen_reg_rtx(SImode);
+                emit_move_insn(tmp, XEXP(plus, 0));
+                XEXP(plus, 0) = tmp;
+                XEXP(dst, 0) = plus;
+                legitimize = true;
+            }
+        }
         if (GET_CODE(src) != REG) {
             src = force_reg(SImode, src);
             legitimize = true;
@@ -134,6 +147,16 @@ bool toy_legitimize_move(rtx dst, rtx src) {
             emit_move_insn(src, symbol);
             src = gen_rtx_MEM(SImode, src);
             legitimize = true;
+        }
+        if (GET_CODE(symbol) == CONST) {
+            rtx plus = XEXP(symbol, 0);
+            if (GET_CODE(XEXP(plus, 0)) == SYMBOL_REF) {
+                rtx tmp = gen_reg_rtx(SImode);
+                emit_move_insn(tmp, XEXP(plus, 0));
+                XEXP(plus, 0) = tmp;
+                XEXP(src, 0) = plus;
+                legitimize = true;
+            }
         }
         if (legitimize) {
             emit_move_insn(dst, src);
