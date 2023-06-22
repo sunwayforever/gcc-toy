@@ -9,4 +9,6 @@ void foo() {
     x = x & 0x1;
     x = x | 0x1;
     x = x ^ 0x1;
+    x = x << 2;
+    x = x >> 2;
 }
