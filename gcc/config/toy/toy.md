@@ -57,8 +57,8 @@
 	      (match_operand:SI 1 "general_operand" ""))]
   ""
   {
-  if (GET_CODE (operands[0]) == MEM)
-      operands[1]=force_reg(SImode, operands[1]);
+    if (toy_legitimize_move(operands[0], operands[1]))
+        DONE;
   }
   )
 
@@ -69,6 +69,13 @@
   "@
    mov %0, %1
    li %0, %1"
+  )
+
+(define_insn "*movsi"
+    [(set (match_operand:SI 0 "register_operand")
+	      (match_operand:SI 1 "symbolic_operand" ))]
+  ""
+  "la %0, %1"
   )
 
 (define_insn "*store"

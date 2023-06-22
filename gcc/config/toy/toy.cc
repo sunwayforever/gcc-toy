@@ -86,6 +86,9 @@ static void toy_print_operand_address(
             toy_print_operand(file, XEXP(x, 1), 0);
             fprintf(file, "(%s)", reg_names[REGNO(XEXP(x, 0))]);
             break;
+        case SYMBOL_REF:
+            output_addr_const(file, x);
+            break;
         default:
             abort();
     }
@@ -103,4 +106,41 @@ static bool toy_can_eliminate(const int from ATTRIBUTE_UNUSED, const int to) {
 HOST_WIDE_INT
 toy_initial_elimination_offset(int from, int to) { return 0; }
 
+bool toy_legitimize_move(rtx dst, rtx src) {
+    // (mov mem (const 1))
+    bool legitimize = false;
+    if (GET_CODE(dst) == MEM) {
+        rtx symbol = XEXP(dst, 0);
+        if (GET_CODE(symbol) == SYMBOL_REF) {
+            dst = gen_reg_rtx(SImode);
+            emit_move_insn(dst, symbol);
+            dst = gen_rtx_MEM(SImode, dst);
+            legitimize = true;
+        }
+        if (GET_CODE(src) != REG) {
+            src = force_reg(SImode, src);
+            legitimize = true;
+        }
+        if (legitimize) {
+            emit_move_insn(dst, src);
+            return true;
+        }
+    }
+
+    if (GET_CODE(src) == MEM) {
+        rtx symbol = XEXP(src, 0);
+        if (GET_CODE(symbol) == SYMBOL_REF) {
+            src = gen_reg_rtx(SImode);
+            emit_move_insn(src, symbol);
+            src = gen_rtx_MEM(SImode, src);
+            legitimize = true;
+        }
+        if (legitimize) {
+            emit_move_insn(dst, src);
+            return true;
+        }
+    }
+
+    return false;
+}
 struct gcc_target targetm = TARGET_INITIALIZER;
