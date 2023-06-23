@@ -76,7 +76,7 @@
     [(set (match_operand:QI 0 "register_operand")
 	      (subreg:QI (match_operand:SI 1 "register_operand") 0))]
   ""
-  "mov %0, %1"
+  "mv\t%0, %1"
   )
 
 (define_insn "*movsi"
@@ -84,28 +84,28 @@
 	      (match_operand:SI 1 "arith_operand" "r,i"))]
   ""
   "@
-   mov %0, %1
-   li %0, %1"
+   mv\t%0, %1
+   li\t%0, %1"
   )
 
 (define_insn "*movsi"
     [(set (match_operand:SI 0 "register_operand")
 	      (match_operand:SI 1 "symbolic_operand" ))]
   ""
-  "la %0, %1"
+  "la\t%0, %1"
   )
 
 (define_insn "*store"
    [(set (match_operand:SI 0 "memory_operand")
 	(match_operand:SI 1 "register_operand"))]
   ""
-  "sw %1, %0")
+  "sw\t%1, %0")
 
 (define_insn "*load"
   [(set (match_operand:SI 0 "register_operand")
 	(match_operand:SI 1 "memory_operand"))]
   ""
-  "lw %0, %1")
+  "lw\t%0, %1")
 
 (define_expand "cstoresi4"
   [(set (match_operand:SI 0 "register_operand")
@@ -136,4 +136,22 @@
 	    (match_operand:QI 1 "register_operand" "")))]
   ""
   "zext.b\t%0,%1"
+  [])
+
+(define_insn "cbranchsi4"
+  [(set (pc)
+	(if_then_else (match_operator 0 "comparison_operator"
+		      [(match_operand:SI 1 "register_operand")
+		       (match_operand:SI 2 "register_operand")])
+		      (label_ref (match_operand 3 ""))
+		      (pc)))]
+  ""
+  "b%C0\t%1,%2,%3"
+  )
+
+(define_insn "jump"
+  [(set (pc)
+	(label_ref (match_operand 0 "" "")))]
+  ""
+  "j"
   [])

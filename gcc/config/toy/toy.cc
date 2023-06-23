@@ -56,21 +56,32 @@ static bool toy_legitimate_address_p(machine_mode mode, rtx x, bool strict_p) {
 #undef TARGET_LEGITIMATE_ADDRESS_P
 #define TARGET_LEGITIMATE_ADDRESS_P toy_legitimate_address_p
 
-void toy_print_operand(FILE *file, rtx x, int code) {
-    rtx operand = x;
+void toy_print_operand(FILE *file, rtx op, int letter) {
+    enum rtx_code code = GET_CODE(op);
 
-    switch (GET_CODE(operand)) {
+    switch (letter) {
+        case 'C':
+            fputs(GET_RTX_NAME(code), file);
+            break;
+    }
+    printf("print operand:\n");
+    debug_rtx(op);
+    switch (code) {
         case REG:
-            fprintf(file, "%s", reg_names[REGNO(operand)]);
+            fprintf(file, "%s", reg_names[REGNO(op)]);
             return;
 
         case MEM:
-            output_address(VOIDmode, XEXP(operand, 0));
+            output_address(VOIDmode, XEXP(op, 0));
+            return;
+
+        case CODE_LABEL:
+            output_address(VOIDmode, op);
             return;
 
         default:
-            if (CONSTANT_P(operand)) {
-                output_addr_const(file, operand);
+            if (CONSTANT_P(op)) {
+                output_addr_const(file, op);
                 return;
             }
     }
@@ -87,6 +98,7 @@ static void toy_print_operand_address(
             fprintf(file, "(%s)", reg_names[REGNO(XEXP(x, 0))]);
             break;
         case SYMBOL_REF:
+        case CODE_LABEL:
             output_addr_const(file, x);
             break;
         case CONST:

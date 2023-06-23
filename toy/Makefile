@@ -1,7 +1,10 @@
 all:build
 
+GCC_PREFIX ?= /opt/gcc-riscv/bin/riscv64-unknown-linux-gnu-
+
 TEST_SRC := $(shell find ./ -name "*.c" -printf '%P\n')
 TEST_ASM := $(patsubst %.c,%.s,${TEST_SRC})
+TEST_OBJ := $(patsubst %.c,%.o,${TEST_SRC})
 
 GDB ?=
 DEBUG ?=
@@ -19,6 +22,9 @@ ifeq (${GDB}, 1)
 else
 	${CC1} -O0 $< -o $@ ${DEBUG}
 endif
+
+${TEST_OBJ}:%.o:%.s
+	${GCC_PREFIX}gcc -c -o $@ $< && ${GCC_PREFIX}objdump -d $@
 
 ${TEST_ASM}:FORCE
 
