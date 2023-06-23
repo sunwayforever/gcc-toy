@@ -34,11 +34,20 @@ convert_optab_p (optab op)
 /* Return the insn used to implement mode MODE of OP, or CODE_FOR_nothing
    if the target does not have such an insn.  */
 
+struct optab_def
+{
+  const char *name;
+  const char *pattern;
+};
+
+extern optab_def optabs[];
+
 inline enum insn_code
 optab_handler (optab op, machine_mode mode)
 {
   unsigned scode = (op << 16) | mode;
   gcc_assert (op > LAST_CONV_OPTAB);
+  printf("optab_handler: %s mode: %d, found: %d\n", optabs[op].name, mode, raw_optab_handler (scode) != CODE_FOR_nothing);
   return raw_optab_handler (scode);
 }
 
@@ -52,6 +61,7 @@ convert_optab_handler (convert_optab op, machine_mode to_mode,
 {
   unsigned scode = (op << 16) | (from_mode << 8) | to_mode;
   gcc_assert (convert_optab_p (op));
+  printf("optab_handler: %s, from: %d, to: %d, found: %d\n", optabs[op].name, from_mode, to_mode, raw_optab_handler (scode) != CODE_FOR_nothing);
   return raw_optab_handler (scode);
 }
 

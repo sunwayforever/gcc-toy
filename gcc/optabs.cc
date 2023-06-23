@@ -47,12 +47,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "internal-fn.h"
 #include "langhooks.h"
 
-struct optab_def
-{
-  const char *name;
-  const char *pattern;
-};
-
 #define OPTAB_CL(o, p, c, b, l)		{ #o, p },
 #define OPTAB_CX(o, p)
 #define OPTAB_CD(o, p)			{ #o, p },
@@ -1500,7 +1494,6 @@ rtx
 expand_binop (machine_mode mode, optab binoptab, rtx op0, rtx op1,
 	      rtx target, int unsignedp, enum optab_methods methods)
 {
-  printf("expand_binop: %s\n", optabs[binoptab].name);
   enum optab_methods next_methods
     = (methods == OPTAB_LIB || methods == OPTAB_LIB_WIDEN
        ? OPTAB_WIDEN : methods);
