@@ -109,21 +109,21 @@ static bool toy_can_eliminate(const int from ATTRIBUTE_UNUSED, const int to) {
 HOST_WIDE_INT
 toy_initial_elimination_offset(int from, int to) { return 0; }
 
-bool toy_legitimize_move(rtx dst, rtx src) {
+bool toy_legitimize_move(machine_mode mode, rtx dst, rtx src) {
     // (mov mem (const 1))
     bool legitimize = false;
     if (GET_CODE(dst) == MEM) {
         rtx symbol = XEXP(dst, 0);
         if (GET_CODE(symbol) == SYMBOL_REF) {
-            dst = gen_reg_rtx(SImode);
+            dst = gen_reg_rtx(mode);
             emit_move_insn(dst, symbol);
-            dst = gen_rtx_MEM(SImode, dst);
+            dst = gen_rtx_MEM(mode, dst);
             legitimize = true;
         }
         if (GET_CODE(symbol) == CONST) {
             rtx plus = XEXP(symbol, 0);
             if (GET_CODE(XEXP(plus, 0)) == SYMBOL_REF) {
-                rtx tmp = gen_reg_rtx(SImode);
+                rtx tmp = gen_reg_rtx(mode);
                 emit_move_insn(tmp, XEXP(plus, 0));
                 XEXP(plus, 0) = tmp;
                 XEXP(dst, 0) = plus;
@@ -131,7 +131,7 @@ bool toy_legitimize_move(rtx dst, rtx src) {
             }
         }
         if (GET_CODE(src) != REG) {
-            src = force_reg(SImode, src);
+            src = force_reg(mode, src);
             legitimize = true;
         }
         if (legitimize) {
@@ -143,15 +143,15 @@ bool toy_legitimize_move(rtx dst, rtx src) {
     if (GET_CODE(src) == MEM) {
         rtx symbol = XEXP(src, 0);
         if (GET_CODE(symbol) == SYMBOL_REF) {
-            src = gen_reg_rtx(SImode);
+            src = gen_reg_rtx(mode);
             emit_move_insn(src, symbol);
-            src = gen_rtx_MEM(SImode, src);
+            src = gen_rtx_MEM(mode, src);
             legitimize = true;
         }
         if (GET_CODE(symbol) == CONST) {
             rtx plus = XEXP(symbol, 0);
             if (GET_CODE(XEXP(plus, 0)) == SYMBOL_REF) {
-                rtx tmp = gen_reg_rtx(SImode);
+                rtx tmp = gen_reg_rtx(mode);
                 emit_move_insn(tmp, XEXP(plus, 0));
                 XEXP(plus, 0) = tmp;
                 XEXP(src, 0) = plus;
@@ -165,5 +165,49 @@ bool toy_legitimize_move(rtx dst, rtx src) {
     }
 
     return false;
+}
+
+void toy_expand_int_scc(rtx target, int code, rtx op0, rtx op1) {
+    switch (code) {
+        case LT:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(LT, GET_MODE(target), op0, op1)));
+            break;
+        case GT:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(LT, GET_MODE(target), op1, op0)));
+            break;
+        case GE:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(LT, GET_MODE(target), op0, op1)));
+            emit_insn(gen_rtx_SET(
+                target,
+                gen_rtx_fmt_ee(XOR, GET_MODE(target), target, const1_rtx)));
+            break;
+        case LE:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(LT, GET_MODE(target), op1, op0)));
+            emit_insn(gen_rtx_SET(
+                target,
+                gen_rtx_fmt_ee(XOR, GET_MODE(target), target, const1_rtx)));
+            break;
+        case EQ:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(XOR, GET_MODE(target), op1, op0)));
+            emit_insn(gen_rtx_SET(
+                target,
+                gen_rtx_fmt_ee(LT, GET_MODE(target), target, const1_rtx)));
+            break;
+        case NE:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(XOR, GET_MODE(target), op1, op0)));
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(
+                            LT, GET_MODE(target),
+                            force_reg(GET_MODE(target), const0_rtx), target)));
+            break;
+        default:
+            abort();
+    }
 }
 struct gcc_target targetm = TARGET_INITIALIZER;

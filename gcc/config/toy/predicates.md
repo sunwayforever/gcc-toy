@@ -4,3 +4,6 @@
 
 (define_predicate "symbolic_operand"
   (match_code "symbol_ref,label_ref"))
+
+(define_predicate "order_operator"
+  (match_code "eq,ne,lt,ltu,le,leu,ge,geu,gt,gtu"))

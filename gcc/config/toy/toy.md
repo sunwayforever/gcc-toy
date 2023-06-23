@@ -57,9 +57,26 @@
 	      (match_operand:SI 1 "general_operand" ""))]
   ""
   {
-    if (toy_legitimize_move(operands[0], operands[1]))
+    if (toy_legitimize_move(SImode, operands[0], operands[1]))
         DONE;
   }
+  )
+
+(define_expand "movqi"
+    [(set (match_operand:QI 0 "general_operand" "" )
+	      (match_operand:QI 1 "general_operand" ""))]
+  ""
+  {
+    if (toy_legitimize_move(QImode, operands[0], operands[1]))
+        DONE;
+  }
+  )
+
+(define_insn "*movqi"
+    [(set (match_operand:QI 0 "register_operand")
+	      (subreg:QI (match_operand:SI 1 "register_operand") 0))]
+  ""
+  "mov %0, %1"
   )
 
 (define_insn "*movsi"
@@ -89,3 +106,34 @@
 	(match_operand:SI 1 "memory_operand"))]
   ""
   "lw %0, %1")
+
+(define_expand "cstoresi4"
+  [(set (match_operand:SI 0 "register_operand")
+	(match_operator:SI 1 "order_operator"
+	    [(match_operand:SI 2 "register_operand")
+	     (match_operand:SI 3 "register_operand")]))]
+  ""
+  {
+    toy_expand_int_scc (operands[0], GET_CODE (operands[1]), operands[2],
+			operands[3]);
+    DONE;
+  })
+
+(define_insn "*slt"
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+	(lt:SI
+	    (match_operand:SI 1 "register_operand" "r,r")
+        (match_operand:SI 2 "arith_operand" "r,i")))]
+  ""
+  "@
+   slt\t%0,%1,%2
+   slti\t%0,%1,%2"
+  [])
+
+(define_insn "zero_extendqisi2"
+  [(set (match_operand:SI 0 "register_operand"    "")
+	(zero_extend:SI
+	    (match_operand:QI 1 "register_operand" "")))]
+  ""
+  "zext.b\t%0,%1"
+  [])
