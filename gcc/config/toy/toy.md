@@ -155,3 +155,28 @@
   ""
   "j"
   [])
+
+(define_expand "prologue"
+  [(clobber (const_int 0))]
+  ""
+  {
+  toy_expand_prologue ();
+  DONE;
+  }
+)
+
+(define_expand "epilogue"
+  [(clobber (const_int 0))]
+  ""
+  {
+  toy_expand_epilogue ();
+  DONE;
+  }
+)
+
+(define_insn "return"
+  [(return)]
+  ""
+  "ret"
+  []
+)

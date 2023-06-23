@@ -1,3 +1,5 @@
+#define IN_TARGET_CODE 1
+
 // clang-format off
 #include "config.h"
 #include "system.h"
@@ -64,8 +66,6 @@ void toy_print_operand(FILE *file, rtx op, int letter) {
             fputs(GET_RTX_NAME(code), file);
             break;
     }
-    printf("print operand:\n");
-    debug_rtx(op);
     switch (code) {
         case REG:
             fprintf(file, "%s", reg_names[REGNO(op)]);
@@ -117,9 +117,6 @@ static bool toy_can_eliminate(const int from ATTRIBUTE_UNUSED, const int to) {
 }
 
 #define TARGET_CAN_ELIMINATE toy_can_eliminate
-
-HOST_WIDE_INT
-toy_initial_elimination_offset(int from, int to) { return 0; }
 
 bool toy_legitimize_move(machine_mode mode, rtx dst, rtx src) {
     // (mov mem (const 1))
@@ -216,10 +213,94 @@ void toy_expand_int_scc(rtx target, int code, rtx op0, rtx op1) {
             emit_insn(gen_rtx_SET(
                 target, gen_rtx_fmt_ee(
                             LT, GET_MODE(target),
-                            force_reg(GET_MODE(target), const0_rtx), target)));
+                            gen_rtx_REG(GET_MODE(target), 0), target)));
             break;
         default:
             abort();
     }
 }
+
+static int toy_callee_saved_reg_size;
+static int toy_local_vars_size;
+static int toy_stack_size;
+
+static bool toy_save_reg_p(unsigned int regno) {
+    bool call_saved = !global_regs[regno] && !call_used_or_fixed_reg_p(regno);
+    bool might_clobber =
+        crtl->saves_all_registers || df_regs_ever_live_p(regno);
+    if (call_saved && might_clobber) return true;
+    if (regno == HARD_FRAME_POINTER_REGNUM) return true;
+    if (regno == RETURN_ADDR_REGNUM && crtl->calls_eh_return) return true;
+
+    return false;
+}
+
+static void toy_compute_frame(void) {
+    int stack_alignment = STACK_BOUNDARY / BITS_PER_UNIT;
+    toy_local_vars_size = (int)get_frame_size();
+    int padding_locals = toy_local_vars_size % stack_alignment;
+    if (padding_locals) padding_locals = stack_alignment - padding_locals;
+    toy_local_vars_size += padding_locals;
+    toy_callee_saved_reg_size = 0;
+    for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
+        if (toy_save_reg_p(regno)) toy_callee_saved_reg_size += 4;
+    }
+    toy_stack_size = toy_local_vars_size + toy_callee_saved_reg_size;
+}
+
+HOST_WIDE_INT
+toy_initial_elimination_offset(int from, int to) {
+    toy_compute_frame();
+    return -toy_stack_size;
+}
+
+void toy_expand_prologue() {
+    toy_compute_frame();
+    // addi    sp,sp,-32
+    // sw      ra,28(sp)
+    // sw      s0,24(sp)
+    // addi    s0,sp,32
+    // NOTE: adjust sp
+    emit_move_insn(
+        stack_pointer_rtx,
+        gen_rtx_fmt_ee(
+            PLUS, SImode, stack_pointer_rtx, GEN_INT(-toy_stack_size)));
+
+    // NOTE: save CSRs
+    int offset = toy_stack_size;
+    for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
+        if (toy_save_reg_p(regno)) {
+            offset -= 4;
+            rtx dst = gen_rtx_MEM(
+                SImode, gen_rtx_fmt_ee(
+                            PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
+            emit_move_insn(dst, gen_rtx_REG(SImode, regno));
+        }
+    }
+    // NOTE: set fp
+    emit_insn(gen_add3_insn(
+        hard_frame_pointer_rtx, stack_pointer_rtx, GEN_INT(toy_stack_size)));
+}
+
+void toy_expand_epilogue() {
+    int offset = toy_stack_size;
+    for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
+        if (toy_save_reg_p(regno)) {
+            offset -= 4;
+            rtx src = gen_rtx_MEM(
+                SImode, gen_rtx_fmt_ee(
+                            PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
+            emit_move_insn(gen_rtx_REG(SImode, regno), src);
+        }
+    }
+    rtx insn = emit_move_insn(
+        stack_pointer_rtx,
+        gen_rtx_fmt_ee(
+            PLUS, SImode, stack_pointer_rtx, GEN_INT(toy_stack_size)));
+    // RTX_FRAME_RELATED_P(insn) = 1;
+
+    insn = emit_jump_insn(gen_return());
+    // RTX_FRAME_RELATED_P(insn) = 1;
+}
+
 struct gcc_target targetm = TARGET_INITIALIZER;

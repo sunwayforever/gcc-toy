@@ -7,6 +7,7 @@
 // 18 gpr + 18 fpr + 2
 #define FIRST_PSEUDO_REGISTER 38
 
+#define RETURN_ADDR_REGNUM  1
 #define ARG_POINTER_REGNUM 36
 #define FRAME_POINTER_REGNUM 37
 #define STACK_POINTER_REGNUM 2
@@ -44,9 +45,9 @@ enum reg_class {
 #define REG_CLASS_CONTENTS          \
 {									\
   { 0x00000000, 0x00000000},	/* NO_REGS */                   \
-  { 0xffffc000, 0x00000000},	/* GR_REGS */                   \
-  { 0x00000000, 0xffffc000},	/* FP_REGS */                   \
-  { 0xffffc000, 0xfffff000}, /* ALL_REGS */		\
+  { 0x0003ffff, 0x00000000},	/* GR_REGS */                   \
+  { 0xfffc0000, 0x00000003},	/* FP_REGS */                   \
+  { 0xffffffff, 0x0000000f}, /* ALL_REGS */		\
 }
 #define REGISTER_NAMES						\
 { "zero","ra",  "sp",  "gp",  "tp",  "t0",  "t1",  "t2",	\
@@ -55,6 +56,7 @@ enum reg_class {
   "ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7",	\
   "fs0", "fs1", "fa0", "fa1", "fa2", "fa3", "fa4", "fa5",	\
   "fa6", "fa7", "arg", "vfp"}
+
 // clang-format off
 
 extern const enum reg_class toy_regno_to_class[];
