@@ -4,6 +4,8 @@ int m[10];
 void foo() {
     g = 1;
     int x = g;
+    m[2] = 1;
     int y = m[2];
-    m[2] = 10;
+    y += 1;
+    m[2] = y;
 }

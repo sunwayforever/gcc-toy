@@ -249,7 +249,7 @@ static void toy_compute_frame(void) {
 }
 
 HOST_WIDE_INT
-toy_initial_elimination_offset(int from, int to) {
+toy_initial_elimination_offset(int ARG_UNUSED(from), int ARG_UNUSED(to)) {
     toy_compute_frame();
     return -toy_stack_size;
 }
@@ -293,13 +293,12 @@ void toy_expand_epilogue() {
             emit_move_insn(gen_rtx_REG(SImode, regno), src);
         }
     }
-    rtx insn = emit_move_insn(
+    emit_move_insn(
         stack_pointer_rtx,
         gen_rtx_fmt_ee(
             PLUS, SImode, stack_pointer_rtx, GEN_INT(toy_stack_size)));
     // RTX_FRAME_RELATED_P(insn) = 1;
-
-    insn = emit_jump_insn(gen_return());
+    emit_jump_insn(gen_return());
     // RTX_FRAME_RELATED_P(insn) = 1;
 }
 
