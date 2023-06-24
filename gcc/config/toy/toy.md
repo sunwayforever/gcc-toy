@@ -180,3 +180,17 @@
   "ret"
   []
 )
+
+(define_insn "call"
+  [(call (match_operand:SI 0 "memory_operand" "")
+		(match_operand 1 "general_operand" ""))]
+  ""
+  "call %0"
+  )
+
+(define_insn "call_value"
+  [(set (match_operand 0 "register_operand" "=r")
+	    (call (match_operand:SI 1 "memory_operand" "")
+	      (match_operand 2 "general_operand" "")))]
+  ""
+  "call %1")

@@ -317,4 +317,12 @@ static rtx toy_function_arg(
 
 #define TARGET_FUNCTION_ARG toy_function_arg
 
+rtx toy_function_value(
+    const_tree valtype, const_tree fntype_or_decl,
+    bool outgoing ATTRIBUTE_UNUSED) {
+    return gen_rtx_REG(TYPE_MODE(valtype), GP_ARG_FIRST);
+}
+
+#define TARGET_FUNCTION_VALUE toy_function_value
+
 struct gcc_target targetm = TARGET_INITIALIZER;
