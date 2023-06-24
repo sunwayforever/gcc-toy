@@ -302,4 +302,19 @@ void toy_expand_epilogue() {
     // RTX_FRAME_RELATED_P(insn) = 1;
 }
 
+static void toy_function_arg_advance(
+    cumulative_args_t cum_v, const function_arg_info &arg) {}
+
+#define TARGET_FUNCTION_ARG_ADVANCE toy_function_arg_advance
+
+static rtx toy_function_arg(
+    cumulative_args_t cum_v, const function_arg_info &arg) {
+    CUMULATIVE_ARGS *cum = get_cumulative_args(cum_v);
+    rtx ret = gen_rtx_REG(arg.mode, GP_ARG_FIRST + cum->num_gprs);
+    cum->num_gprs++;
+    return ret;
+}
+
+#define TARGET_FUNCTION_ARG toy_function_arg
+
 struct gcc_target targetm = TARGET_INITIALIZER;

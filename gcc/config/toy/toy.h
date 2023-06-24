@@ -7,14 +7,25 @@
 // 18 gpr + 18 fpr + 2
 #define FIRST_PSEUDO_REGISTER 38
 
-#define RETURN_ADDR_REGNUM  1
+#define RETURN_ADDR_REGNUM 1
 #define ARG_POINTER_REGNUM 36
 #define FRAME_POINTER_REGNUM 37
 #define STACK_POINTER_REGNUM 2
 #define HARD_FRAME_POINTER_REGNUM 8
 
-#define FUNCTION_ARG_REGNO_P(N) \
-    (IN_RANGE((N), 10, 17) || IN_RANGE((N), 10 + 18, 17 + 18))
+#define GP_REG_FIRST 0
+#define GP_ARG_FIRST 10
+#define FP_ARG_FIRST 28
+#define GP_REG_LAST 17
+#define GP_REG_NUM (GP_REG_LAST - GP_REG_FIRST + 1)
+
+#define FP_REG_FIRST 18
+#define FP_REG_LAST 35
+#define FP_REG_NUM (FP_REG_LAST - FP_REG_FIRST + 1)
+
+#define FUNCTION_ARG_REGNO_P(N)                       \
+    (IN_RANGE((N), GP_ARG_FIRST, GP_ARG_FIRST + 7) || \
+     IN_RANGE((N), FP_ARG_FIRST, FP_ARG_FIRST + 7))
 
 enum reg_class {
     NO_REGS,        /* no registers in set */
@@ -70,14 +81,6 @@ extern const enum reg_class toy_regno_to_class[];
     }
 // clang-format on
 
-#define GP_REG_FIRST 0
-#define GP_REG_LAST 17
-#define GP_REG_NUM (GP_REG_LAST - GP_REG_FIRST + 1)
-
-#define FP_REG_FIRST 18
-#define FP_REG_LAST 35
-#define FP_REG_NUM (FP_REG_LAST - FP_REG_FIRST + 1)
-
 #define GP_REG_P(REGNO) ((unsigned int)((int)(REGNO)-GP_REG_FIRST) < GP_REG_NUM)
 
 #define FP_REG_P(REGNO) ((unsigned int)((int)(REGNO)-FP_REG_FIRST) < FP_REG_NUM)
@@ -85,6 +88,7 @@ extern const enum reg_class toy_regno_to_class[];
 #define REGNO_MODE_OK_FOR_BASE_P(REGNO, MODE) GP_REG_P(REGNO)
 
 typedef struct {
+    int num_gprs;
 } CUMULATIVE_ARGS;
 
 #define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, INDIRECT, N_NAMED_ARGS) \
