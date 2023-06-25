@@ -29,11 +29,17 @@ else
 CC1 := ../build/gcc/cc1
 endif
 
+ifeq (${DEBUG}, 1)
+	DEBUG_FLAG := -fdump-rtl-all
+else
+	DEBUG_FLAG := 2>/dev/null
+endif
+
 ${TEST_ASM}:%.s:%.c
 ifeq (${GDB}, 1)
-	gdb.sh -e ${CC1} -a "${CC1FLAGS} -O0 $< -o $@" ${DEBUG}
+	gdb.sh -e ${CC1} -a "${CC1FLAGS} -O0 $< -o $@ ${DEBUG_FLAG}"
 else
-	${CC1} ${CC1FLAGS} -O0 $< -o $@ ${DEBUG}
+	${CC1} ${CC1FLAGS} -O0 $< -o $@ ${DEBUG_FLAG}
 endif
 
 ${RUN_ELF}:%.elf:%.s

@@ -1,16 +1,22 @@
 (include "predicates.md")
+(include "constraints.md")
 
 (define_mode_iterator ANYI [QI HI SI DI])
 (define_mode_iterator SHORT [QI HI])
+(define_mode_iterator ANYF [SF DF])
+
 (define_mode_attr size [(QI "b") (HI "h")])
-(define_mode_attr load [(QI "lb") (HI "lh") (SI "lw") (DI "ld")])
-(define_mode_attr store [(QI "sb") (HI "sh") (SI "sw") (DI "sd")])
+(define_mode_attr fmt [(SF "s") (DF "d")])
+(define_mode_attr load [(QI "lb") (HI "lh") (SI "lw") (DI "ld") (SF "flw") (DF "fld")])
+(define_mode_attr store [(QI "sb") (HI "sh") (SI "sw") (DI "sd") (SF "fsw") (DF "fsd")])
 
 (define_code_iterator arithi [plus and ior xor ashift ashiftrt lshiftrt])
 (define_code_iterator arith [mult div])
+(define_code_iterator arithf [plus minus mult div])
 
 (define_code_attr optab [
   (plus "add")
+  (minus "sub")
   (and "and")
   (ior "ior")
   (xor "xor")
@@ -23,6 +29,7 @@
 
 (define_code_attr insn [
   (plus "add")
+  (minus "sub")
   (and "and")
   (ior "or")
   (xor "xor")
@@ -52,38 +59,36 @@
   "<insn>\t%0,%1,%2"
   [])
 
+(define_insn "<optab><mode>3"
+    [(set (match_operand:ANYF          0 "register_operand" "=f")
+	      (arithf:ANYF (match_operand:ANYF 1 "register_operand" "f")
+		           (match_operand:ANYF 2 "register_operand" "f")))]
+  ""
+  "f<insn>.<fmt>\t%0,%1,%2"
+  [])
+
 (define_insn "nop"
   [(const_int 0)]
   ""
   "nop"
   [])
 
-(define_expand "movsi"
-    [(set (match_operand:SI 0 "general_operand" "" )
-	      (match_operand:SI 1 "general_operand" ""))]
+(define_expand "mov<ANYI:mode>"
+    [(set (match_operand:ANYI 0 "general_operand")
+	      (match_operand:ANYI 1 "general_operand"))]
   ""
   {
-    if (toy_legitimize_move(SImode, operands[0], operands[1]))
+    if (toy_legitimize_move(operands[0], operands[1]))
         DONE;
   }
   )
 
-(define_expand "movqi"
-    [(set (match_operand:QI 0 "general_operand" "" )
-	      (match_operand:QI 1 "general_operand" ""))]
+(define_expand "mov<ANYF:mode>"
+    [(set (match_operand:ANYF 0 "general_operand" "=f" )
+	      (match_operand:ANYF 1 "general_operand" "f"))]
   ""
   {
-    if (toy_legitimize_move(QImode, operands[0], operands[1]))
-        DONE;
-  }
-  )
-
-(define_expand "movhi"
-    [(set (match_operand:QI 0 "general_operand" "" )
-	      (match_operand:QI 1 "general_operand" ""))]
-  ""
-  {
-    if (toy_legitimize_move(HImode, operands[0], operands[1]))
+    if (toy_legitimize_move(operands[0], operands[1]))
         DONE;
   }
   )
@@ -132,15 +137,27 @@
   "la\t%0, %1"
   )
 
-(define_insn "*store"
+(define_insn "*storei"
    [(set (match_operand:ANYI 0 "memory_operand")
 	(match_operand:ANYI 1 "register_operand"))]
   ""
   "<store>\t%1, %0")
 
-(define_insn "*load"
+(define_insn "*storef"
+   [(set (match_operand:ANYF 0 "memory_operand")
+	(match_operand:ANYF 1 "register_operand" "f"))]
+  ""
+  "<store>\t%1, %0")
+
+(define_insn "*loadi"
   [(set (match_operand:ANYI 0 "register_operand")
 	(match_operand:ANYI 1 "memory_operand"))]
+  ""
+  "<load>\t%0, %1")
+
+(define_insn "*loadf"
+  [(set (match_operand:ANYF 0 "register_operand" "=f")
+	(match_operand:ANYF 1 "memory_operand"))]
   ""
   "<load>\t%0, %1")
 
@@ -231,3 +248,34 @@
 	      (match_operand 2 "general_operand" "")))]
   ""
   "call %1")
+
+(define_insn "extendsfdf2"
+  [(set (match_operand:DF     0 "register_operand" "=f")
+	(float_extend:DF
+	    (match_operand:SF 1 "register_operand" "f")))]
+  ""
+  "fcvt.d.s\t%0,%1"
+  [])
+
+(define_insn "truncdfsf2"
+  [(set (match_operand:SF     0 "register_operand" "=f")
+	(float_truncate:SF
+	    (match_operand:DF 1 "register_operand" " f")))]
+  ""
+  "fcvt.s.d\t%0,%1"
+  [])
+
+(define_insn "abs<mode>2"
+  [(set (match_operand:ANYF           0 "register_operand" "=f")
+	(abs:ANYF (match_operand:ANYF 1 "register_operand" " f")))]
+    ""
+  "fabs.<fmt>\t%0,%1"
+  [])
+
+(define_insn "fix_trunc<mode>si2"
+  [(set (match_operand:SI      0 "register_operand" "=r")
+	(fix:SI
+	    (match_operand:ANYF 1 "register_operand" " f")))]
+  ""
+  "fcvt.w.<fmt> %0,%1,rtz"
+  [])

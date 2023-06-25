@@ -118,14 +118,15 @@ static bool toy_can_eliminate(const int from ATTRIBUTE_UNUSED, const int to) {
 
 #define TARGET_CAN_ELIMINATE toy_can_eliminate
 
-bool toy_legitimize_move(machine_mode mode, rtx dst, rtx src) {
+bool toy_legitimize_move(rtx dst, rtx src) {
     // (mov mem (const 1))
     bool legitimize = false;
+    machine_mode mode = GET_MODE(dst);
     if (GET_CODE(dst) == MEM) {
         rtx symbol = XEXP(dst, 0);
         if (GET_CODE(symbol) == SYMBOL_REF) {
             dst = gen_reg_rtx(GET_MODE(symbol));
-            emit_move_insn(dst, symbol);
+            emit_insn(gen_rtx_SET(dst, symbol));
             dst = gen_rtx_MEM(mode, dst);
             legitimize = true;
         }
@@ -133,7 +134,7 @@ bool toy_legitimize_move(machine_mode mode, rtx dst, rtx src) {
             rtx plus = XEXP(symbol, 0);
             if (GET_CODE(XEXP(plus, 0)) == SYMBOL_REF) {
                 rtx tmp = gen_reg_rtx(mode);
-                emit_move_insn(tmp, XEXP(plus, 0));
+                emit_insn(gen_rtx_SET(tmp, XEXP(plus, 0)));
                 XEXP(plus, 0) = tmp;
                 XEXP(dst, 0) = plus;
                 legitimize = true;
@@ -144,7 +145,7 @@ bool toy_legitimize_move(machine_mode mode, rtx dst, rtx src) {
             legitimize = true;
         }
         if (legitimize) {
-            emit_move_insn(dst, src);
+            emit_insn(gen_rtx_SET(dst, src));
             return true;
         }
     }
@@ -153,7 +154,7 @@ bool toy_legitimize_move(machine_mode mode, rtx dst, rtx src) {
         rtx symbol = XEXP(src, 0);
         if (GET_CODE(symbol) == SYMBOL_REF) {
             src = gen_reg_rtx(GET_MODE(symbol));
-            emit_move_insn(src, symbol);
+            emit_insn(gen_rtx_SET(src, symbol));
             src = gen_rtx_MEM(mode, src);
             legitimize = true;
         }
@@ -161,14 +162,14 @@ bool toy_legitimize_move(machine_mode mode, rtx dst, rtx src) {
             rtx plus = XEXP(symbol, 0);
             if (GET_CODE(XEXP(plus, 0)) == SYMBOL_REF) {
                 rtx tmp = gen_reg_rtx(mode);
-                emit_move_insn(tmp, XEXP(plus, 0));
+                emit_insn(gen_rtx_SET(tmp, XEXP(plus, 0)));
                 XEXP(plus, 0) = tmp;
                 XEXP(src, 0) = plus;
                 legitimize = true;
             }
         }
         if (legitimize) {
-            emit_move_insn(dst, src);
+            emit_insn(gen_rtx_SET(dst, src));
             return true;
         }
     }
@@ -236,16 +237,13 @@ static bool toy_save_reg_p(unsigned int regno) {
 }
 
 static void toy_compute_frame(void) {
-    int stack_alignment = STACK_BOUNDARY / BITS_PER_UNIT;
-    toy_local_vars_size = (int)get_frame_size();
-    int padding_locals = toy_local_vars_size % stack_alignment;
-    if (padding_locals) padding_locals = stack_alignment - padding_locals;
-    toy_local_vars_size += padding_locals;
+    toy_local_vars_size = TOY_STACK_ALIGN(get_frame_size());
     toy_callee_saved_reg_size = 0;
     for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
         if (toy_save_reg_p(regno)) toy_callee_saved_reg_size += 4;
     }
-    toy_stack_size = toy_local_vars_size + toy_callee_saved_reg_size;
+    toy_stack_size =
+        toy_local_vars_size + TOY_STACK_ALIGN(toy_callee_saved_reg_size);
 }
 
 HOST_WIDE_INT
@@ -324,5 +322,18 @@ rtx toy_function_value(
 }
 
 #define TARGET_FUNCTION_VALUE toy_function_value
+
+static bool toy_legitimate_constant_p(
+    machine_mode mode ATTRIBUTE_UNUSED, rtx x) {
+    switch (GET_CODE(x)) {
+        case CONST_INT:
+            return true;
+        case CONST_DOUBLE:
+            return false;
+    }
+    return false;
+}
+
+#define TARGET_LEGITIMATE_CONSTANT_P toy_legitimate_constant_p
 
 struct gcc_target targetm = TARGET_INITIALIZER;
