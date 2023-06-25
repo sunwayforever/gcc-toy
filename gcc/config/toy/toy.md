@@ -1,5 +1,11 @@
 (include "predicates.md")
 
+(define_mode_iterator ANYI [QI HI SI DI])
+(define_mode_iterator SHORT [QI HI])
+(define_mode_attr size [(QI "b") (HI "h")])
+(define_mode_attr load [(QI "lb") (HI "lh") (SI "lw") (DI "ld")])
+(define_mode_attr store [(QI "sb") (HI "sh") (SI "sw") (DI "sd")])
+
 (define_code_iterator arithi [plus and ior xor ashift ashiftrt lshiftrt])
 (define_code_iterator arith [mult div])
 
@@ -72,16 +78,47 @@
   }
   )
 
-(define_insn "*movqi"
-    [(set (match_operand:QI 0 "register_operand")
-	      (subreg:QI (match_operand:SI 1 "register_operand") 0))]
+(define_expand "movhi"
+    [(set (match_operand:QI 0 "general_operand" "" )
+	      (match_operand:QI 1 "general_operand" ""))]
   ""
-  "mv\t%0, %1"
+  {
+    if (toy_legitimize_move(HImode, operands[0], operands[1]))
+        DONE;
+  }
   )
 
-(define_insn "*movsi"
-    [(set (match_operand:SI 0 "register_operand" "=r,r")
-	      (match_operand:SI 1 "arith_operand" "r,i"))]
+(define_insn "*movtruncate"
+    [(set (match_operand:SHORT 0 "register_operand")
+	      (subreg:SHORT (match_operand:SI 1 "register_operand") 0))]
+  ""
+  "zext.<size>\t%0, %1"
+  )
+
+(define_insn "*movtruncate2"
+    [(set (match_operand:QI 0 "register_operand")
+	      (subreg:QI (match_operand:HI 1 "register_operand") 0))]
+  ""
+  "zext.b\t%0, %1"
+  )
+
+(define_insn "*movsubext"
+    [(set (match_operand:SI 0 "register_operand")
+	      (subreg:SI (match_operand:SHORT 1 "register_operand") 0))]
+  ""
+  "sext.<size>\t%0, %1"
+  )
+
+(define_insn "*movsubext2"
+    [(set (match_operand:HI 0 "register_operand")
+	      (subreg:HI (match_operand:QI 1 "register_operand") 0))]
+  ""
+  "sext.b\t%0, %1"
+  )
+
+(define_insn "*mov<mode>"
+    [(set (match_operand:ANYI 0 "register_operand" "=r,r")
+	      (match_operand:ANYI 1 "arith_operand" "r,i"))]
   ""
   "@
    mv\t%0, %1
@@ -96,16 +133,16 @@
   )
 
 (define_insn "*store"
-   [(set (match_operand:SI 0 "memory_operand")
-	(match_operand:SI 1 "register_operand"))]
+   [(set (match_operand:ANYI 0 "memory_operand")
+	(match_operand:ANYI 1 "register_operand"))]
   ""
-  "sw\t%1, %0")
+  "<store>\t%1, %0")
 
 (define_insn "*load"
-  [(set (match_operand:SI 0 "register_operand")
-	(match_operand:SI 1 "memory_operand"))]
+  [(set (match_operand:ANYI 0 "register_operand")
+	(match_operand:ANYI 1 "memory_operand"))]
   ""
-  "lw\t%0, %1")
+  "<load>\t%0, %1")
 
 (define_expand "cstoresi4"
   [(set (match_operand:SI 0 "register_operand")

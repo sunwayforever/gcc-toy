@@ -124,7 +124,7 @@ bool toy_legitimize_move(machine_mode mode, rtx dst, rtx src) {
     if (GET_CODE(dst) == MEM) {
         rtx symbol = XEXP(dst, 0);
         if (GET_CODE(symbol) == SYMBOL_REF) {
-            dst = gen_reg_rtx(mode);
+            dst = gen_reg_rtx(GET_MODE(symbol));
             emit_move_insn(dst, symbol);
             dst = gen_rtx_MEM(mode, dst);
             legitimize = true;
@@ -152,7 +152,7 @@ bool toy_legitimize_move(machine_mode mode, rtx dst, rtx src) {
     if (GET_CODE(src) == MEM) {
         rtx symbol = XEXP(src, 0);
         if (GET_CODE(symbol) == SYMBOL_REF) {
-            src = gen_reg_rtx(mode);
+            src = gen_reg_rtx(GET_MODE(symbol));
             emit_move_insn(src, symbol);
             src = gen_rtx_MEM(mode, src);
             legitimize = true;
