@@ -12,3 +12,9 @@ char foo(short x) {
     g = 1;
     return a + b + c + d + e + f + g;
 }
+
+#include <assert.h>
+int main(int argc, char *argv[]) {
+    assert(foo(2) == 8);
+    return 0;
+}

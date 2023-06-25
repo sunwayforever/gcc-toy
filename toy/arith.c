@@ -20,3 +20,13 @@ void foo() {
     x = x >> 1;
     c = x;
 }
+
+#include <assert.h>
+
+int main(int argc, char *argv[]) {
+    foo();
+    assert(a == 4);
+    assert(b == 136);
+    assert(c == 2);
+    return 0;
+}

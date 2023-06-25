@@ -8,3 +8,11 @@ int test() {
     x += 1;
     return x;
 }
+
+#include <assert.h>
+int main(int argc, char *argv[]) {
+    foo(1, 2);
+    assert(x == 3);
+    assert(bar(1, 2) == 3);
+    assert(test() == 4);
+}

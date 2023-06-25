@@ -1,6 +1,6 @@
 all:build
 
-GCC_PREFIX ?= /opt/gcc-riscv/bin/riscv64-unknown-linux-gnu-
+GCC_PREFIX ?= /opt/gcc-riscv/
 
 MAIN_SRC := $(shell find ./ -name "*.main.c" -printf '%P\n')
 MAIN_ELF := $(patsubst %.main.c,%.elf,${MAIN_SRC})
@@ -18,28 +18,34 @@ GDB ?=
 DEBUG ?=
 RISCV ?=
 
+CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
+			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
+			-D__riscv -D__riscv_xlen=32
+
 ifeq (${RISCV}, 1)
 CC1 := ../build_riscv/gcc/cc1
-CC1FLAGS := -march=rv32g
+CC1FLAGS += -march=rv32g
 else
 CC1 := ../build/gcc/cc1
 endif
 
 ${TEST_ASM}:%.s:%.c
 ifeq (${GDB}, 1)
-	gdb.sh -e ${CC1} -a "-O0 $< -o $@" ${DEBUG}
+	gdb.sh -e ${CC1} -a "${CC1FLAGS} -O0 $< -o $@" ${DEBUG}
 else
 	${CC1} ${CC1FLAGS} -O0 $< -o $@ ${DEBUG}
 endif
 
 ${RUN_ELF}:%.elf:%.s
-	${GCC_PREFIX}gcc -march=rv32g -mabi=ilp32d $^ -O0 -o $@ -static
+	${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=ilp32d \
+		$^ -O0 -o $@ -static
 
 ${RUN_APP}:%:%.elf
 	qemu-riscv32 $<
 
 ${TEST_OBJ}:%.o:%.s
-	${GCC_PREFIX}gcc -c -o $@ $< && ${GCC_PREFIX}objdump -d $@
+	${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -c -o $@ $< && \
+		${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-objdump -d $@
 
 ${TEST_ASM}:FORCE
 

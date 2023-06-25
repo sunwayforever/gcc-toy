@@ -9,3 +9,11 @@ void foo() {
     y += 1;
     m[2] = y;
 }
+
+#include <assert.h>
+int main(int argc, char *argv[]) {
+    foo();
+    assert(g == 1);
+    assert(m[2] == 2);
+    return 0;
+}

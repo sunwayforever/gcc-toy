@@ -9,4 +9,5 @@ extern bool toy_legitimize_move(machine_mode mode, rtx dest, rtx src);
 extern void toy_expand_int_scc(rtx target, int code, rtx op0, rtx op1);
 extern void toy_expand_prologue();
 extern void toy_expand_epilogue();
+
 #endif  // TOY_PROTOS_H
