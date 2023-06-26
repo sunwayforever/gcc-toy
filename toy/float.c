@@ -1,8 +1,8 @@
 // 2023-06-25 15:21
 #include <assert.h>
 
-int main(int argc, char *argv[]) {
-    float x = 0.1;
+double foo(float m) {
+    float x = m;
     float y = 0.1;
     float z = x + y;
     double a = z;
@@ -16,5 +16,10 @@ int main(int argc, char *argv[]) {
     assert(b >= 0.0f);
     assert(b > 0.0f);
     assert(b != 0.0f);
+    return b;
+}
+
+int main(int argc, char *argv[]) {
+    assert(foo(0.1f) < 0.01);
     return 0;
 }

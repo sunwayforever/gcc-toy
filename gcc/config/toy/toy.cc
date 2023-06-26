@@ -285,7 +285,15 @@ static void toy_compute_frame(void) {
     toy_local_vars_size = TOY_STACK_ALIGN(get_frame_size());
     toy_callee_saved_reg_size = 0;
     for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
-        if (toy_save_reg_p(regno)) toy_callee_saved_reg_size += 4;
+        if (toy_save_reg_p(regno)) {
+            if (REGNO_REG_CLASS(regno) == GPR_REGS) {
+                toy_callee_saved_reg_size += 4;
+            } else if (REGNO_REG_CLASS(regno) == FPR_REGS) {
+                toy_callee_saved_reg_size += 8;
+            } else {
+                gcc_unreachable();
+            }
+        }
     }
     toy_stack_size =
         toy_local_vars_size + TOY_STACK_ALIGN(toy_callee_saved_reg_size);
@@ -313,11 +321,23 @@ void toy_expand_prologue() {
     int offset = toy_stack_size;
     for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
         if (toy_save_reg_p(regno)) {
-            offset -= 4;
-            rtx dst = gen_rtx_MEM(
-                SImode, gen_rtx_fmt_ee(
-                            PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
-            emit_move_insn(dst, gen_rtx_REG(SImode, regno));
+            if (REGNO_REG_CLASS(regno) == GPR_REGS) {
+                offset -= 4;
+                rtx dst = gen_rtx_MEM(
+                    SImode,
+                    gen_rtx_fmt_ee(
+                        PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
+                emit_move_insn(dst, gen_rtx_REG(SImode, regno));
+            } else if (REGNO_REG_CLASS(regno) == FPR_REGS) {
+                offset -= 8;
+                rtx dst = gen_rtx_MEM(
+                    DFmode,
+                    gen_rtx_fmt_ee(
+                        PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
+                emit_move_insn(dst, gen_rtx_REG(DFmode, regno));
+            } else {
+                gcc_unreachable();
+            }
         }
     }
     // NOTE: set fp
@@ -329,11 +349,23 @@ void toy_expand_epilogue() {
     int offset = toy_stack_size;
     for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
         if (toy_save_reg_p(regno)) {
-            offset -= 4;
-            rtx src = gen_rtx_MEM(
-                SImode, gen_rtx_fmt_ee(
-                            PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
-            emit_move_insn(gen_rtx_REG(SImode, regno), src);
+            if (REGNO_REG_CLASS(regno) == GPR_REGS) {
+                offset -= 4;
+                rtx src = gen_rtx_MEM(
+                    SImode,
+                    gen_rtx_fmt_ee(
+                        PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
+                emit_move_insn(gen_rtx_REG(SImode, regno), src);
+            } else if (REGNO_REG_CLASS(regno) == FPR_REGS) {
+                offset -= 8;
+                rtx src = gen_rtx_MEM(
+                    DFmode,
+                    gen_rtx_fmt_ee(
+                        PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
+                emit_move_insn(gen_rtx_REG(DFmode, regno), src);
+            } else {
+                gcc_unreachable();
+            }
         }
     }
     emit_move_insn(
@@ -353,8 +385,14 @@ static void toy_function_arg_advance(
 static rtx toy_function_arg(
     cumulative_args_t cum_v, const function_arg_info &arg) {
     CUMULATIVE_ARGS *cum = get_cumulative_args(cum_v);
-    rtx ret = gen_rtx_REG(arg.mode, GP_ARG_FIRST + cum->num_gprs);
-    cum->num_gprs++;
+    rtx ret;
+    if (FLOAT_MODE_P(arg.mode)) {
+        ret = gen_rtx_REG(arg.mode, FP_ARG_FIRST + cum->num_fprs);
+        cum->num_fprs++;
+    } else {
+        ret = gen_rtx_REG(arg.mode, GP_ARG_FIRST + cum->num_gprs);
+        cum->num_gprs++;
+    }
     return ret;
 }
 
@@ -363,7 +401,11 @@ static rtx toy_function_arg(
 rtx toy_function_value(
     const_tree valtype, const_tree fntype_or_decl,
     bool outgoing ATTRIBUTE_UNUSED) {
-    return gen_rtx_REG(TYPE_MODE(valtype), GP_ARG_FIRST);
+    if (FLOAT_MODE_P(TYPE_MODE(valtype))) {
+        return gen_rtx_REG(TYPE_MODE(valtype), FP_ARG_FIRST);
+    } else {
+        return gen_rtx_REG(TYPE_MODE(valtype), GP_ARG_FIRST);
+    }
 }
 
 #define TARGET_FUNCTION_VALUE toy_function_value

@@ -134,6 +134,13 @@
    li\t%0, %1"
   )
 
+(define_insn "*mov<mode>"
+    [(set (match_operand:ANYF 0 "register_operand" "=f")
+	      (match_operand:ANYF 1 "register_operand" "f"))]
+  ""
+  "fmv.<fmt>\t%0, %1"
+  )
+
 (define_insn "*movsi"
     [(set (match_operand:SI 0 "register_operand")
 	      (match_operand:SI 1 "symbolic_operand" ))]
@@ -281,9 +288,9 @@
   )
 
 (define_insn "call_value"
-  [(set (match_operand 0 "register_operand" "=r")
-	    (call (match_operand:SI 1 "memory_operand" "")
-	      (match_operand 2 "general_operand" "")))]
+    [(set (match_operand 0 "register_operand")
+	      (call (match_operand:SI 1 "memory_operand")
+	            (match_operand 2 "general_operand")))]
   ""
   "call %1")
 

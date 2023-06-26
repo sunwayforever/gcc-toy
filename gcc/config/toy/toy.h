@@ -15,11 +15,11 @@
 
 #define GP_REG_FIRST 0
 #define GP_ARG_FIRST 10
-#define FP_ARG_FIRST 28
 #define GP_REG_LAST 17
 #define GP_REG_NUM (GP_REG_LAST - GP_REG_FIRST + 1)
 
 #define FP_REG_FIRST 18
+#define FP_ARG_FIRST 28
 #define FP_REG_LAST 35
 #define FP_REG_NUM (FP_REG_LAST - FP_REG_FIRST + 1)
 
@@ -36,7 +36,7 @@ enum reg_class {
 };
 
 #define REG_CLASS_NAMES \
-    { "NO_REGS", "GR_REGS", "FP_REGS", "ALL_REGS" }
+    { "NO_REGS", "GPR_REGS", "FPR_REGS", "ALL_REGS" }
 
 // clang-format off
 #define FIXED_REGISTERS \
@@ -89,6 +89,7 @@ extern const enum reg_class toy_regno_to_class[];
 
 typedef struct {
     int num_gprs;
+    int num_fprs;
 } CUMULATIVE_ARGS;
 
 #define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, INDIRECT, N_NAMED_ARGS) \
@@ -110,8 +111,9 @@ typedef struct {
 #define FUNCTION_BOUNDARY 32
 #define STRICT_ALIGNMENT 1
 
-#define TOY_STACK_ALIGN(LOC) \
-  (((LOC) + ((PREFERRED_STACK_BOUNDARY/8)-1)) & -(PREFERRED_STACK_BOUNDARY/8))
+#define TOY_STACK_ALIGN(LOC)                          \
+    (((LOC) + ((PREFERRED_STACK_BOUNDARY / 8) - 1)) & \
+     -(PREFERRED_STACK_BOUNDARY / 8))
 
 #define BIGGEST_ALIGNMENT 128
 #define FUNCTION_MODE SImode
