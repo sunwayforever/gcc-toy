@@ -118,6 +118,38 @@ static bool toy_can_eliminate(const int from ATTRIBUTE_UNUSED, const int to) {
 
 #define TARGET_CAN_ELIMINATE toy_can_eliminate
 
+static rtx legitimize_memory_address(rtx x) {
+    if (!can_create_pseudo_p()) {
+        return x;
+    }
+    switch (GET_CODE(x)) {
+        case PLUS: {
+            rtx tmp = gen_reg_rtx(GET_MODE(x));
+            rtx a = legitimize_memory_address(XEXP(x, 0));
+            rtx b = legitimize_memory_address(XEXP(x, 1));
+            if (a == XEXP(x, 0) && b == XEXP(x, 1)) {
+                return x;
+            }
+            emit_insn(gen_add3_insn(tmp, a, b));
+            return tmp;
+        }
+        case MULT: {
+            rtx tmp = gen_reg_rtx(GET_MODE(x));
+            rtx a = force_reg(GET_MODE(x), XEXP(x, 0));
+            rtx b = force_reg(GET_MODE(x), XEXP(x, 1));
+            emit_insn(
+                gen_rtx_SET(tmp, gen_rtx_fmt_ee(MULT, GET_MODE(tmp), a, b)));
+            return tmp;
+        }
+        case SYMBOL_REF: {
+            rtx tmp = gen_reg_rtx(GET_MODE(x));
+            emit_insn(gen_rtx_SET(tmp, x));
+            return tmp;
+        }
+    }
+    return x;
+}
+
 bool toy_legitimize_move(rtx dst, rtx src) {
     // (mov mem (const 1))
     bool legitimize = false;
@@ -165,6 +197,15 @@ bool toy_legitimize_move(rtx dst, rtx src) {
                 emit_insn(gen_rtx_SET(tmp, XEXP(plus, 0)));
                 XEXP(plus, 0) = tmp;
                 XEXP(src, 0) = plus;
+                legitimize = true;
+            }
+        }
+        // (mem:SI (plus:SI (mult:SI (reg:SI 54)
+        //            (const_int 4 [0x4]))
+        //  (symbol_ref:SI ("data") [flags 0x2])))
+        if (GET_CODE(symbol) == PLUS) {
+            src = legitimize_memory_address(symbol);
+            if (src != symbol) {
                 legitimize = true;
             }
         }

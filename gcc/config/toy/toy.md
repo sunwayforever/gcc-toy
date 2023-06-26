@@ -11,7 +11,7 @@
 (define_mode_attr store [(QI "sb") (HI "sh") (SI "sw") (DI "sd") (SF "fsw") (DF "fsd")])
 
 (define_code_iterator arithi [plus and ior xor ashift ashiftrt lshiftrt])
-(define_code_iterator arith [mult div])
+(define_code_iterator arith [minus mult div])
 (define_code_iterator arithf [plus minus mult div])
 (define_code_iterator cmpf [lt le eq])
 
@@ -252,7 +252,7 @@
   [(set (pc)
 	(label_ref (match_operand 0 "" "")))]
   ""
-  "j"
+  "j %0"
   [])
 
 (define_expand "prologue"
