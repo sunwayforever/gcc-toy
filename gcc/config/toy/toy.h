@@ -28,29 +28,30 @@
      IN_RANGE((N), FP_ARG_FIRST, FP_ARG_FIRST + 7))
 
 enum reg_class {
-    NO_REGS,        /* no registers in set */
-    GPR_REGS,       /* integer registers */
-    FPR_REGS,       /* floating-point registers */
+    NO_REGS,  /* no registers in set */
+    GPR_REGS, /* integer registers */
+    FPR_REGS, /* floating-point registers */
+    FRAME_REGS,
     ALL_REGS,       /* all registers */
     LIM_REG_CLASSES /* max value + 1 */
 };
 
 #define REG_CLASS_NAMES \
-    { "NO_REGS", "GPR_REGS", "FPR_REGS", "ALL_REGS" }
+    { "NO_REGS", "GR_REGS", "FP_REGS", "FRAME_REGS", "ALL_REGS" }
 
 // clang-format off
 #define FIXED_REGISTERS \
     { /* General registers.  */                               \
       1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,    \
       /* Floating-point registers.  */                        \
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0\
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1\
     }
 
 #define CALL_USED_REGISTERS						\
 { /* General registers.  */						\
   1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, \
   /* Floating-point registers.  */					\
-  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0 \
+  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 \
 }
 
 #define REG_CLASS_CONTENTS          \
@@ -58,6 +59,7 @@ enum reg_class {
   { 0x00000000, 0x00000000},	/* NO_REGS */                   \
   { 0x0003ffff, 0x00000000},	/* GR_REGS */                   \
   { 0xfffc0000, 0x00000003},	/* FP_REGS */                   \
+  { 0x00000000, 0x0000000C},	/* FRAME_REGS */                   \
   { 0xffffffff, 0x0000000f}, /* ALL_REGS */		\
 }
 #define REGISTER_NAMES						\
@@ -155,5 +157,10 @@ typedef struct {
 #define DATA_SECTION_ASM_OP "\t.data"
 #define READONLY_DATA_SECTION_ASM_OP "\t.section\t.rodata"
 #define BSS_SECTION_ASM_OP "\t.bss"
+
+#define IMM_BITS 12
+#define IMM_REACH (1LL << IMM_BITS)
+#define SMALL_OPERAND(VALUE) \
+    ((unsigned HOST_WIDE_INT)(VALUE) + IMM_REACH / 2 < IMM_REACH)
 
 #endif  // TOY_H

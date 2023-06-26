@@ -39,13 +39,13 @@
 // clang-format on
 
 const enum reg_class toy_regno_to_class[FIRST_PSEUDO_REGISTER] = {
-    GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS,
-    GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS,
-    GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS,
+    GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS,   GPR_REGS,   GPR_REGS,
+    GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS,   GPR_REGS,   GPR_REGS,
+    GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS,
 
-    FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS,
-    FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS,
-    FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS,
+    FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS,   FPR_REGS,   FPR_REGS,
+    FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS,   FPR_REGS,   FPR_REGS,
+    FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FRAME_REGS, FRAME_REGS,
 };
 
 void toy_asm_out_constructor(rtx symbol, int priority) {}
@@ -126,7 +126,10 @@ static rtx legitimize_memory_address(rtx x) {
         case PLUS: {
             rtx tmp = gen_reg_rtx(GET_MODE(x));
             rtx a = legitimize_memory_address(XEXP(x, 0));
-            rtx b = legitimize_memory_address(XEXP(x, 1));
+            rtx b = XEXP(x, 1);
+            if (GET_CODE(XEXP(x, 1)) != CONST_INT) {
+                b = legitimize_memory_address(XEXP(x, 1));
+            }
             if (a == XEXP(x, 0) && b == XEXP(x, 1)) {
                 return x;
             }
@@ -146,75 +149,57 @@ static rtx legitimize_memory_address(rtx x) {
             emit_insn(gen_rtx_SET(tmp, x));
             return tmp;
         }
+        case CONST: {
+            return legitimize_memory_address(XEXP(x, 0));
+        }
+        case CONST_INT: {
+            rtx tmp = gen_reg_rtx(SImode);
+            emit_insn(gen_rtx_SET(tmp, x));
+            return tmp;
+        }
+        case MEM: {
+            rtx tmp = gen_reg_rtx(GET_MODE(x));
+            emit_move_insn(tmp, x);
+            return tmp;
+        }
     }
     return x;
 }
 
 bool toy_legitimize_move(rtx dst, rtx src) {
-    // (mov mem (const 1))
     bool legitimize = false;
     machine_mode mode = GET_MODE(dst);
     if (GET_CODE(dst) == MEM) {
-        rtx symbol = XEXP(dst, 0);
-        if (GET_CODE(symbol) == SYMBOL_REF) {
-            dst = gen_reg_rtx(GET_MODE(symbol));
-            emit_insn(gen_rtx_SET(dst, symbol));
-            dst = gen_rtx_MEM(mode, dst);
+        rtx tmp = legitimize_memory_address(XEXP(dst, 0));
+        if (tmp != XEXP(dst, 0)) {
+            XEXP(dst, 0) = tmp;
             legitimize = true;
         }
-        if (GET_CODE(symbol) == CONST) {
-            rtx plus = XEXP(symbol, 0);
-            if (GET_CODE(XEXP(plus, 0)) == SYMBOL_REF) {
-                rtx tmp = gen_reg_rtx(mode);
-                emit_insn(gen_rtx_SET(tmp, XEXP(plus, 0)));
-                XEXP(plus, 0) = tmp;
-                XEXP(dst, 0) = plus;
+        if (GET_CODE(src) != MEM) {
+            rtx tmp = legitimize_memory_address(src);
+            if (tmp != src) {
+                src = tmp;
                 legitimize = true;
             }
         }
-        if (GET_CODE(src) != REG) {
-            src = force_reg(mode, src);
-            legitimize = true;
-        }
-        if (legitimize) {
-            emit_insn(gen_rtx_SET(dst, src));
-            return true;
-        }
     }
-
     if (GET_CODE(src) == MEM) {
-        rtx symbol = XEXP(src, 0);
-        if (GET_CODE(symbol) == SYMBOL_REF) {
-            src = gen_reg_rtx(GET_MODE(symbol));
-            emit_insn(gen_rtx_SET(src, symbol));
-            src = gen_rtx_MEM(mode, src);
+        rtx tmp = legitimize_memory_address(XEXP(src, 0));
+        if (tmp != XEXP(src, 0)) {
+            XEXP(src, 0) = tmp;
             legitimize = true;
         }
-        if (GET_CODE(symbol) == CONST) {
-            rtx plus = XEXP(symbol, 0);
-            if (GET_CODE(XEXP(plus, 0)) == SYMBOL_REF) {
-                rtx tmp = gen_reg_rtx(mode);
-                emit_insn(gen_rtx_SET(tmp, XEXP(plus, 0)));
-                XEXP(plus, 0) = tmp;
-                XEXP(src, 0) = plus;
-                legitimize = true;
-            }
-        }
-        // (mem:SI (plus:SI (mult:SI (reg:SI 54)
-        //            (const_int 4 [0x4]))
-        //  (symbol_ref:SI ("data") [flags 0x2])))
-        if (GET_CODE(symbol) == PLUS) {
-            src = legitimize_memory_address(symbol);
-            if (src != symbol) {
-                legitimize = true;
-            }
-        }
-        if (legitimize) {
-            emit_insn(gen_rtx_SET(dst, src));
-            return true;
+        if (GET_CODE(dst) == MEM) {
+            rtx tmp = gen_reg_rtx(GET_MODE(dst));
+            emit_move_insn(tmp, src);
+            src = tmp;
+            legitimize = true;
         }
     }
-
+    if (legitimize) {
+        emit_insn(gen_rtx_SET(dst, src));
+        return true;
+    }
     return false;
 }
 
@@ -317,7 +302,7 @@ static bool toy_save_reg_p(unsigned int regno) {
         crtl->saves_all_registers || df_regs_ever_live_p(regno);
     if (call_saved && might_clobber) return true;
     if (regno == HARD_FRAME_POINTER_REGNUM) return true;
-    if (regno == RETURN_ADDR_REGNUM && crtl->calls_eh_return) return true;
+    if (regno == RETURN_ADDR_REGNUM) return true;
 
     return false;
 }
@@ -455,7 +440,7 @@ static bool toy_legitimate_constant_p(
     machine_mode mode ATTRIBUTE_UNUSED, rtx x) {
     switch (GET_CODE(x)) {
         case CONST_INT:
-            return true;
+            return SMALL_OPERAND(INTVAL(x));
         case CONST_DOUBLE:
             return false;
     }

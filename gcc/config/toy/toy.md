@@ -47,7 +47,7 @@
 (define_insn "<optab>si3"
     [(set (match_operand:SI          0 "register_operand" "=r,r" )
 	      (arithi:SI (match_operand:SI 1 "register_operand" "r,r")
-		           (match_operand:SI 2 "arith_operand" "r,i")))]
+		           (match_operand:SI 2 "arith_operand" "r,I")))]
   "true"
   "@
    <insn>\t%0,%1,%2
@@ -127,7 +127,7 @@
 
 (define_insn "*mov<mode>"
     [(set (match_operand:ANYI 0 "register_operand" "=r,r")
-	      (match_operand:ANYI 1 "arith_operand" "r,i"))]
+	      (match_operand:ANYI 1 "arith_operand" "r,I"))]
   ""
   "@
    mv\t%0, %1
@@ -150,7 +150,7 @@
 
 (define_insn "*storei"
    [(set (match_operand:ANYI 0 "memory_operand")
-	(match_operand:ANYI 1 "register_operand"))]
+	(match_operand 1 "register_operand"))]
   ""
   "<store>\t%1, %0")
 
@@ -209,7 +209,7 @@
   [(set (match_operand:SI 0 "register_operand" "=r,r")
 	(lt:SI
 	    (match_operand:SI 1 "register_operand" "r,r")
-        (match_operand:SI 2 "arith_operand" "r,i")))]
+        (match_operand:SI 2 "arith_operand" "r,I")))]
   ""
   "@
    slt\t%0,%1,%2
