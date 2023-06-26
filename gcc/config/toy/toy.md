@@ -13,6 +13,7 @@
 (define_code_iterator arithi [plus and ior xor ashift ashiftrt lshiftrt])
 (define_code_iterator arith [mult div])
 (define_code_iterator arithf [plus minus mult div])
+(define_code_iterator cmpf [lt le eq])
 
 (define_code_attr optab [
   (plus "add")
@@ -25,6 +26,9 @@
   (ashift "ashl")
   (ashiftrt "ashr")
   (lshiftrt "lshr")
+  (lt "lt")
+  (le "le")
+  (eq "eq")
   ])
 
 (define_code_attr insn [
@@ -173,6 +177,27 @@
     DONE;
   })
 
+(define_expand "cstore<mode>4"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(match_operator:SI 1 "fp_order_operator"
+	    [(match_operand:ANYF 2 "register_operand" "f")
+	     (match_operand:ANYF 3 "register_operand" "f")]))]
+  ""
+  {
+    toy_expand_fp_scc (operands[0], GET_CODE (operands[1]), operands[2],
+			operands[3]);
+    DONE;
+  })
+
+(define_insn "*f<optab>"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(cmpf:SI
+	 (match_operand:ANYF 1 "register_operand" "f")
+     (match_operand:ANYF 2 "register_operand" "f")))]
+  ""
+  "f<optab>.<fmt>\t%0,%1,%2"
+  [])
+
 (define_insn "*slt"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
 	(lt:SI
@@ -201,6 +226,19 @@
 		      (pc)))]
   ""
   "b%C0\t%1,%2,%3"
+  )
+
+(define_expand "cbranch<mode>4"
+  [(set (pc)
+	(if_then_else (match_operator 0 "comparison_operator"
+		      [(match_operand:ANYF 1 "register_operand")
+		       (match_operand:ANYF 2 "register_operand")])
+		      (label_ref (match_operand 3 ""))
+		      (pc)))]
+  ""
+  {
+      toy_expand_fp_brcc (operands);
+  }
   )
 
 (define_insn "jump"

@@ -221,6 +221,51 @@ void toy_expand_int_scc(rtx target, int code, rtx op0, rtx op1) {
     }
 }
 
+void toy_expand_fp_scc(rtx target, int code, rtx op0, rtx op1) {
+    switch (code) {
+        case LT:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(LT, GET_MODE(target), op0, op1)));
+            break;
+        case GT:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(LT, GET_MODE(target), op1, op0)));
+            break;
+        case GE:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(LE, GET_MODE(target), op1, op0)));
+            break;
+        case LE:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(LE, GET_MODE(target), op0, op1)));
+            break;
+        case EQ:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(EQ, GET_MODE(target), op0, op1)));
+            break;
+        case NE:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(EQ, GET_MODE(target), op0, op1)));
+            emit_insn(gen_rtx_SET(
+                target,
+                gen_rtx_fmt_ee(XOR, GET_MODE(target), target, const1_rtx)));
+            break;
+        default:
+            abort();
+    }
+}
+
+void toy_expand_fp_brcc(rtx *operands) {
+    rtx compare = operands[0];
+    rtx op0 = operands[1];
+    rtx op1 = operands[2];
+    rtx reg = gen_reg_rtx(SImode);
+    toy_expand_fp_scc(reg, GET_CODE(compare), op0, op1);
+    operands[0] = gen_rtx_fmt_ee(NE, SImode, op0, op1);
+    operands[1] = reg;
+    operands[2] = gen_rtx_REG(SImode, 0);
+}
+
 static int toy_callee_saved_reg_size;
 static int toy_local_vars_size;
 static int toy_stack_size;

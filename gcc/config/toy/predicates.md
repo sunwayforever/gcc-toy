@@ -7,3 +7,6 @@
 
 (define_predicate "order_operator"
   (match_code "eq,ne,lt,ltu,le,leu,ge,geu,gt,gtu"))
+
+(define_predicate "fp_order_operator"
+  (match_code "ne,eq,lt,le,gt,ge"))
