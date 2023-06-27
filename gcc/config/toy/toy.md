@@ -324,3 +324,18 @@
   ""
   "fcvt.w.<fmt> %0,%1,rtz"
   [])
+
+(define_insn "floatsi<mode>2"
+  [(set (match_operand:ANYF    0 "register_operand" "=f")
+	(float:ANYF
+	    (match_operand:SI 1 "register_operand" "r")))]
+  ""
+  "fcvt.<fmt>.w\t%0,%1"
+  [])
+
+(define_insn "neg<mode>2"
+  [(set (match_operand:ANYF           0 "register_operand" "=f")
+	(neg:ANYF (match_operand:ANYF 1 "register_operand" " f")))]
+  ""
+  "fneg.<fmt>\t%0,%1"
+  [])
