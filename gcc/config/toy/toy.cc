@@ -36,6 +36,7 @@
 #include "predict.h"
 #include "tree-pass.h"
 #include "opts.h"
+#include "langhooks.h"
 // clang-format on
 
 const enum reg_class toy_regno_to_class[FIRST_PSEUDO_REGISTER] = {
@@ -448,5 +449,32 @@ static bool toy_legitimate_constant_p(
 }
 
 #define TARGET_LEGITIMATE_CONSTANT_P toy_legitimate_constant_p
+
+void toy_init_builtins(void) {
+    tree BT_FN_VOID_PTR = build_function_type_list(ptr_type_node, NULL_TREE);
+    add_builtin_function(
+        "__builtin_getsp", BT_FN_VOID_PTR, 0, BUILT_IN_MD, NULL, NULL);
+}
+
+#define TARGET_INIT_BUILTINS toy_init_builtins
+
+rtx toy_expand_builtin(
+    tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
+    machine_mode mode ATTRIBUTE_UNUSED, int ignore ATTRIBUTE_UNUSED) {
+    tree fndecl = TREE_OPERAND(CALL_EXPR_FN(exp), 0);
+    unsigned int fcode = DECL_MD_FUNCTION_CODE(fndecl);
+
+    switch (fcode) {
+        case 0: {
+            rtx tmp = gen_reg_rtx(SImode);
+            emit_insn(GEN_FCN(CODE_FOR_getsp)(tmp));
+            return tmp;
+        }
+        default:
+            gcc_unreachable();
+    }
+}
+
+#define TARGET_EXPAND_BUILTIN toy_expand_builtin
 
 struct gcc_target targetm = TARGET_INITIALIZER;

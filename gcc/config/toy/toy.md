@@ -334,8 +334,14 @@
   [])
 
 (define_insn "neg<mode>2"
-  [(set (match_operand:ANYF           0 "register_operand" "=f")
+  [(set (match_operand:ANYF 0 "register_operand" "=f")
 	(neg:ANYF (match_operand:ANYF 1 "register_operand" " f")))]
   ""
   "fneg.<fmt>\t%0,%1"
+  [])
+
+(define_insn "getsp"
+    [(unspec [(match_operand:SI 0 "register_operand" "r")] 0)]
+  ""
+  "mv \t%0,sp"
   [])

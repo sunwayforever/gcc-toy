@@ -2,21 +2,24 @@ all:build
 
 GCC_PREFIX ?= /opt/gcc-riscv/
 
+GDB ?=
+DEBUG ?=
+RISCV ?=
+
 MAIN_SRC := $(shell find ./ -name "*.main.c" -printf '%P\n')
 MAIN_ELF := $(patsubst %.main.c,%.elf,${MAIN_SRC})
 ${MAIN_ELF}:%.elf:%.main.c
 
 TEST_SRC := $(shell find ./ -name "*.c" -printf '%P\n')
 TEST_SRC := $(filter-out ${MAIN_SRC}, ${TEST_SRC})
+ifeq (${RISCV}, 1)
+TEST_SRC := $(filter-out builtin.c, ${TEST_SRC})
+endif
 TEST_ASM := $(patsubst %.c,%.s,${TEST_SRC})
 TEST_OBJ := $(patsubst %.c,%.o,${TEST_SRC})
 
 RUN_ELF := $(patsubst %.c,%.elf,${TEST_SRC})
 RUN_APP := $(patsubst %.elf, %,${RUN_ELF})
-
-GDB ?=
-DEBUG ?=
-RISCV ?=
 
 CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
