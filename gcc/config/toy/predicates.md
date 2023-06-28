@@ -1,6 +1,6 @@
 (define_predicate "arith_operand"
-  (ior (match_code "reg")
-       (match_code "const_int")))
+    (ior (match_code "const_int")
+         (match_operand 0 "register_operand")))
 
 (define_predicate "symbolic_operand"
   (match_code "symbol_ref,label_ref"))

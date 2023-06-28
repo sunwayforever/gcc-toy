@@ -1,14 +1,14 @@
 (include "predicates.md")
 (include "constraints.md")
 
-(define_mode_iterator ANYI [QI HI SI DI])
+(define_mode_iterator ANYI [QI HI SI])
 (define_mode_iterator SHORT [QI HI])
 (define_mode_iterator ANYF [SF DF])
 
 (define_mode_attr size [(QI "b") (HI "h")])
 (define_mode_attr fmt [(SF "s") (DF "d")])
-(define_mode_attr load [(QI "lb") (HI "lh") (SI "lw") (DI "ld") (SF "flw") (DF "fld")])
-(define_mode_attr store [(QI "sb") (HI "sh") (SI "sw") (DI "sd") (SF "fsw") (DF "fsd")])
+(define_mode_attr load [(QI "lb") (HI "lh") (SI "lw") (SF "flw") (DF "fld")])
+(define_mode_attr store [(QI "sb") (HI "sh") (SI "sw") (SF "fsw") (DF "fsd")])
 
 (define_code_iterator arithi [plus and ior xor ashift ashiftrt lshiftrt])
 (define_code_iterator arith [minus mult div])
@@ -97,34 +97,6 @@
   }
   )
 
-(define_insn "*movtruncate"
-    [(set (match_operand:SHORT 0 "register_operand")
-	      (subreg:SHORT (match_operand:SI 1 "register_operand") 0))]
-  ""
-  "zext.<size>\t%0, %1"
-  )
-
-(define_insn "*movtruncate2"
-    [(set (match_operand:QI 0 "register_operand")
-	      (subreg:QI (match_operand:HI 1 "register_operand") 0))]
-  ""
-  "zext.b\t%0, %1"
-  )
-
-(define_insn "*movsubext"
-    [(set (match_operand:SI 0 "register_operand")
-	      (subreg:SI (match_operand:SHORT 1 "register_operand") 0))]
-  ""
-  "sext.<size>\t%0, %1"
-  )
-
-(define_insn "*movsubext2"
-    [(set (match_operand:HI 0 "register_operand")
-	      (subreg:HI (match_operand:QI 1 "register_operand") 0))]
-  ""
-  "sext.b\t%0, %1"
-  )
-
 (define_insn "*mov<mode>"
     [(set (match_operand:ANYI 0 "register_operand" "=r,r")
 	      (match_operand:ANYI 1 "arith_operand" "r,I"))]
@@ -141,8 +113,8 @@
   "fmv.<fmt>\t%0, %1"
   )
 
-(define_insn "*movsi"
-    [(set (match_operand:SI 0 "register_operand")
+(define_insn "*la"
+    [(set (match_operand:SI 0 "register_operand" "=r")
 	      (match_operand:SI 1 "symbolic_operand" ))]
   ""
   "la\t%0, %1"
@@ -214,6 +186,17 @@
   "@
    slt\t%0,%1,%2
    slti\t%0,%1,%2"
+  [])
+
+(define_insn "*sltu"
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+	(ltu:SI
+	    (match_operand:SI 1 "register_operand" "r,r")
+        (match_operand:SI 2 "arith_operand" "r,I")))]
+  ""
+  "@
+   sltu\t%0,%1,%2
+   sltiu\t%0,%1,%2"
   [])
 
 (define_insn "zero_extendqisi2"

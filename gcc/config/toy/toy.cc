@@ -210,6 +210,10 @@ void toy_expand_int_scc(rtx target, int code, rtx op0, rtx op1) {
             emit_insn(gen_rtx_SET(
                 target, gen_rtx_fmt_ee(LT, GET_MODE(target), op0, op1)));
             break;
+        case LTU:
+            emit_insn(gen_rtx_SET(
+                target, gen_rtx_fmt_ee(LTU, GET_MODE(target), op0, op1)));
+            break;
         case GT:
             emit_insn(gen_rtx_SET(
                 target, gen_rtx_fmt_ee(LT, GET_MODE(target), op1, op0)));

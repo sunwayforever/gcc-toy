@@ -28,14 +28,15 @@ CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 ifeq (${RISCV}, 1)
 CC1 := ../build_riscv/gcc/cc1
 CC1FLAGS += -march=rv32g
+${TEST_ASM}:riscv
 else
 CC1 := ../build/gcc/cc1
+${TEST_ASM}:gcc
 endif
 
+DEBUG_FLAG := 2>/dev/null
 ifeq (${DEBUG}, 1)
 	DEBUG_FLAG := -fdump-rtl-all
-else
-	DEBUG_FLAG := 2>/dev/null
 endif
 
 ${TEST_ASM}:%.s:%.c
