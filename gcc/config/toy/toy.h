@@ -68,7 +68,7 @@ enum reg_class {
   "a6",  "a7",                                              \
   "ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7",	\
   "fs0", "fs1", "fa0", "fa1", "fa2", "fa3", "fa4", "fa5",	\
-  "fa6", "fa7", "arg", "vfp"}
+  "fa6", "fa7", "varg", "vfp"}
 
 // clang-format off
 
@@ -112,6 +112,7 @@ typedef struct {
 #define PARM_BOUNDARY BITS_PER_WORD
 #define FUNCTION_BOUNDARY 32
 #define STRICT_ALIGNMENT 1
+#define ACCUMULATE_OUTGOING_ARGS 1
 
 #define TOY_STACK_ALIGN(LOC)                          \
     (((LOC) + ((PREFERRED_STACK_BOUNDARY / 8) - 1)) & \

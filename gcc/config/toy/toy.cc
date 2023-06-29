@@ -331,9 +331,14 @@ static void toy_compute_frame(void) {
 }
 
 HOST_WIDE_INT
-toy_initial_elimination_offset(int ARG_UNUSED(from), int ARG_UNUSED(to)) {
+toy_initial_elimination_offset(int from, int ARG_UNUSED(to)) {
     toy_compute_frame();
-    return -toy_stack_size;
+    if (from == FRAME_POINTER_REGNUM) {
+        return -toy_stack_size;
+    } else if (from == ARG_POINTER_REGNUM) {
+        return 0;
+    }
+    gcc_unreachable();
 }
 
 void toy_expand_prologue() {
@@ -416,13 +421,17 @@ static void toy_function_arg_advance(
 static rtx toy_function_arg(
     cumulative_args_t cum_v, const function_arg_info &arg) {
     CUMULATIVE_ARGS *cum = get_cumulative_args(cum_v);
-    rtx ret;
+    rtx ret = NULL_RTX;
     if (FLOAT_MODE_P(arg.mode)) {
-        ret = gen_rtx_REG(arg.mode, FP_ARG_FIRST + cum->num_fprs);
-        cum->num_fprs++;
+        if (FUNCTION_ARG_REGNO_P(FP_ARG_FIRST + cum->num_fprs)) {
+            ret = gen_rtx_REG(arg.mode, FP_ARG_FIRST + cum->num_fprs);
+            cum->num_fprs++;
+        }
     } else {
-        ret = gen_rtx_REG(arg.mode, GP_ARG_FIRST + cum->num_gprs);
-        cum->num_gprs++;
+        if (FUNCTION_ARG_REGNO_P(GP_ARG_FIRST + cum->num_gprs)) {
+            ret = gen_rtx_REG(arg.mode, GP_ARG_FIRST + cum->num_gprs);
+            cum->num_gprs++;
+        }
     }
     return ret;
 }
