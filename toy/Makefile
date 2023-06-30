@@ -48,7 +48,7 @@ endif
 
 ${RUN_ELF}:%.elf:%.s
 	${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=ilp32d \
-		$^ -O0 -o $@ -static
+		$^ -O0 -o $@ -static -lm
 
 ${RUN_APP}:%:%.elf
 	qemu-riscv32 $<

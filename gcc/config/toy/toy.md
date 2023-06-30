@@ -104,36 +104,26 @@
   )
 
 (define_insn "*mov<mode>"
-    [(set (match_operand:ANYI 0 "register_operand" "=r,r")
-	      (match_operand:ANYI 1 "arith_operand" "r,I"))]
+    [(set (match_operand:ANYF 0 "nonimmediate_operand" "=f,f,m,r,f")
+	      (match_operand:ANYF 1 "general_operand" "f,m,f,f,r"))]
   ""
   "@
-   mv\t%0, %1
-   li\t%0, %1"
-  )
-
-(define_insn "*movsf"
-    [(set (match_operand:SF 0 "register_operand" "=f,r,f")
-	      (match_operand:SF 1 "register_operand" "f,f,r"))]
-  ""
-  "@
-   fmv.s\t%0, %1
+   fmv.<fmt>\t%0, %1
+   <load>\t\%0, %1
+   <store>\t\%1, %0
    fmv.x.w\t%0, %1
    fmv.w.x\t%0, %1"
   )
 
-(define_insn "*movdf"
-    [(set (match_operand:DF 0 "register_operand" "=f")
-	      (match_operand:DF 1 "register_operand" "f"))]
+(define_insn "*mov<mode>"
+    [(set (match_operand:ANYI 0 "nonimmediate_operand" "=r,r,m,r")
+	      (match_operand:ANYI 1 "general_operand" "r,m,r,i"))]
   ""
-  "fmv.d\t%0, %1"
-  )
-
-(define_insn "*la"
-    [(set (match_operand:SI 0 "register_operand" "=r")
-	      (match_operand:SI 1 "symbolic_operand" ))]
-  ""
-  "la\t%0, %1"
+  "@
+   mv\t%0, %1
+   <load>\t\%0, %1
+   <store>\t\%1, %0
+   li\t%0,%1"
   )
 
 (define_insn "*storei"
@@ -142,23 +132,12 @@
   ""
   "<store>\t%1, %0")
 
-(define_insn "*storef"
-   [(set (match_operand:ANYF 0 "memory_operand")
-	(match_operand:ANYF 1 "register_operand" "f"))]
+(define_insn "*la"
+    [(set (match_operand:SI 0 "register_operand" "=r")
+	      (match_operand:SI 1 "symbolic_operand" ))]
   ""
-  "<store>\t%1, %0")
-
-(define_insn "*loadi"
-  [(set (match_operand:ANYI 0 "register_operand")
-	(match_operand:ANYI 1 "memory_operand"))]
-  ""
-  "<load>\t%0, %1")
-
-(define_insn "*loadf"
-  [(set (match_operand:ANYF 0 "register_operand" "=f")
-	(match_operand:ANYF 1 "memory_operand"))]
-  ""
-  "<load>\t%0, %1")
+  "la\t%0, %1"
+  )
 
 (define_expand "cstoresi4"
   [(set (match_operand:SI 0 "register_operand")
