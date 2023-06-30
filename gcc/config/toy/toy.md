@@ -112,11 +112,21 @@
    li\t%0, %1"
   )
 
-(define_insn "*mov<mode>"
-    [(set (match_operand:ANYF 0 "register_operand" "=f")
-	      (match_operand:ANYF 1 "register_operand" "f"))]
+(define_insn "*movsf"
+    [(set (match_operand:SF 0 "register_operand" "=f,r,f")
+	      (match_operand:SF 1 "register_operand" "f,f,r"))]
   ""
-  "fmv.<fmt>\t%0, %1"
+  "@
+   fmv.s\t%0, %1
+   fmv.x.w\t%0, %1
+   fmv.w.x\t%0, %1"
+  )
+
+(define_insn "*movdf"
+    [(set (match_operand:DF 0 "register_operand" "=f")
+	      (match_operand:DF 1 "register_operand" "f"))]
+  ""
+  "fmv.d\t%0, %1"
   )
 
 (define_insn "*la"

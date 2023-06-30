@@ -490,4 +490,16 @@ rtx toy_expand_builtin(
 
 #define TARGET_EXPAND_BUILTIN toy_expand_builtin
 
+static bool toy_hard_regno_mode_ok(unsigned int regno, machine_mode mode) {
+    if (FP_REG_P(regno) && (GET_MODE_CLASS(mode) != MODE_FLOAT)) {
+        return false;
+    }
+    if (GP_REG_P(regno) && (GET_MODE_CLASS(mode) != MODE_INT)) {
+        return false;
+    }
+    return true;
+}
+
+#define TARGET_HARD_REGNO_MODE_OK toy_hard_regno_mode_ok
+
 struct gcc_target targetm = TARGET_INITIALIZER;

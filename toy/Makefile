@@ -27,7 +27,7 @@ CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 
 ifeq (${RISCV}, 1)
 CC1 := ../build_riscv/gcc/cc1
-CC1FLAGS += -march=rv32g
+CC1FLAGS += -march=rv32g -mabi=ilp32d
 ${TEST_ASM}:riscv
 else
 CC1 := ../build/gcc/cc1
