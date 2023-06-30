@@ -58,9 +58,9 @@ enum reg_class {
 {									\
   { 0x00000000, 0x00000000},	/* NO_REGS */                   \
   { 0x0003ffff, 0x00000000},	/* GR_REGS */                   \
-  { 0xfffc0000, 0x00000003},	/* FP_REGS */                   \
-  { 0x00000000, 0x0000000C},	/* FRAME_REGS */                   \
-  { 0xffffffff, 0x0000000f}, /* ALL_REGS */		\
+  { 0xfffc0000, 0x0000000f},	/* FP_REGS */                   \
+  { 0x00000000, 0x00000030},	/* FRAME_REGS */                   \
+  { 0xffffffff, 0x0000003f}, /* ALL_REGS */		\
 }
 #define REGISTER_NAMES						\
 { "zero","ra",  "sp",  "gp",  "tp",  "t0",  "t1",  "t2",	\

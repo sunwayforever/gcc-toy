@@ -11,7 +11,7 @@
 (define_mode_attr store [(QI "sb") (HI "sh") (SI "sw") (SF "fsw") (DF "fsd")])
 
 (define_code_iterator arithi [plus and ior xor ashift ashiftrt lshiftrt])
-(define_code_iterator arith [minus mult div])
+(define_code_iterator arith [minus mult div udiv mod umod])
 (define_code_iterator arithf [plus minus mult div])
 (define_code_iterator cmpf [lt le eq])
 
@@ -23,9 +23,12 @@
   (xor "xor")
   (mult "mul")
   (div "div")
+  (udiv "udiv")
   (ashift "ashl")
   (ashiftrt "ashr")
   (lshiftrt "lshr")
+  (mod "mod")
+  (umod "umod")
   (lt "lt")
   (le "le")
   (eq "eq")
@@ -39,9 +42,12 @@
   (xor "xor")
   (mult "mul")
   (div "div")
+  (udiv "divu")
   (ashift "sll")
   (ashiftrt "sra")
   (lshiftrt "srl")
+  (mod "rem")
+  (umod "remu")
   ])
 
 (define_insn "<optab>si3"
