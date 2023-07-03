@@ -297,8 +297,6 @@ void toy_expand_fp_brcc(rtx *operands) {
     operands[2] = gen_rtx_REG(SImode, 0);
 }
 
-static int toy_callee_saved_reg_size;
-static int toy_local_vars_size;
 static int toy_stack_size;
 
 static bool toy_save_reg_p(unsigned int regno) {
@@ -313,21 +311,22 @@ static bool toy_save_reg_p(unsigned int regno) {
 }
 
 static void toy_compute_frame(void) {
-    toy_local_vars_size = TOY_STACK_ALIGN(get_frame_size());
-    toy_callee_saved_reg_size = 0;
+    toy_stack_size = 0;
+    toy_stack_size += TOY_STACK_ALIGN(crtl->outgoing_args_size);
+    toy_stack_size += TOY_STACK_ALIGN(get_frame_size());
+    int csr_size = 0;
     for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
         if (toy_save_reg_p(regno)) {
             if (REGNO_REG_CLASS(regno) == GPR_REGS) {
-                toy_callee_saved_reg_size += 4;
+                csr_size += 4;
             } else if (REGNO_REG_CLASS(regno) == FPR_REGS) {
-                toy_callee_saved_reg_size += 8;
+                csr_size += 8;
             } else {
                 gcc_unreachable();
             }
         }
     }
-    toy_stack_size =
-        toy_local_vars_size + TOY_STACK_ALIGN(toy_callee_saved_reg_size);
+    toy_stack_size += TOY_STACK_ALIGN(csr_size);
 }
 
 HOST_WIDE_INT
