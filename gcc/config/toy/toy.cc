@@ -340,6 +340,30 @@ toy_initial_elimination_offset(int from, int ARG_UNUSED(to)) {
     gcc_unreachable();
 }
 
+void toy_set_cfa_offset(int regno, int offset, rtx insn) {
+    rtx reg = gen_rtx_REG(SImode, regno);
+    rtx mem =
+        gen_frame_mem(SImode, plus_constant(Pmode, stack_pointer_rtx, offset));
+    rtx tmp = gen_rtx_SET(mem, reg);
+    rtx dwarf = alloc_reg_note(REG_CFA_OFFSET, tmp, NULL_RTX);
+    REG_NOTES(insn) = dwarf;
+    RTX_FRAME_RELATED_P(insn) = 1;
+}
+
+void toy_set_def_cfa_offset(int offset, rtx insn) {
+    rtx cfa_adjust_rtx =
+        gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(offset));
+    rtx dwarf = alloc_reg_note(REG_CFA_DEF_CFA, cfa_adjust_rtx, NULL_RTX);
+    REG_NOTES(insn) = dwarf;
+    RTX_FRAME_RELATED_P(insn) = 1;
+}
+
+void toy_set_cfa_restore(rtx reg, rtx insn) {
+    rtx dwarf = alloc_reg_note(REG_CFA_RESTORE, reg, NULL_RTX);
+    REG_NOTES(insn) = dwarf;
+    RTX_FRAME_RELATED_P(insn) = 1;
+}
+
 void toy_expand_prologue() {
     toy_compute_frame();
     // addi    sp,sp,-32
@@ -347,10 +371,11 @@ void toy_expand_prologue() {
     // sw      s0,24(sp)
     // addi    s0,sp,32
     // NOTE: adjust sp
-    emit_move_insn(
+    rtx insn = emit_move_insn(
         stack_pointer_rtx,
         gen_rtx_fmt_ee(
             PLUS, SImode, stack_pointer_rtx, GEN_INT(-toy_stack_size)));
+    toy_set_def_cfa_offset(toy_stack_size, insn);
 
     // NOTE: save CSRs
     int offset = toy_stack_size;
@@ -362,14 +387,16 @@ void toy_expand_prologue() {
                     SImode,
                     gen_rtx_fmt_ee(
                         PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
-                emit_move_insn(dst, gen_rtx_REG(SImode, regno));
+                rtx insn = emit_move_insn(dst, gen_rtx_REG(SImode, regno));
+                toy_set_cfa_offset(regno, offset, insn);
             } else if (REGNO_REG_CLASS(regno) == FPR_REGS) {
                 offset -= 8;
                 rtx dst = gen_rtx_MEM(
                     DFmode,
                     gen_rtx_fmt_ee(
                         PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
-                emit_move_insn(dst, gen_rtx_REG(DFmode, regno));
+                rtx insn = emit_move_insn(dst, gen_rtx_REG(DFmode, regno));
+                toy_set_cfa_offset(regno, offset, insn);
             } else {
                 gcc_unreachable();
             }
@@ -384,32 +411,36 @@ void toy_expand_epilogue() {
     int offset = toy_stack_size;
     for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
         if (toy_save_reg_p(regno)) {
+            rtx insn = NULL_RTX;
+            rtx reg = NULL_RTX;
             if (REGNO_REG_CLASS(regno) == GPR_REGS) {
                 offset -= 4;
                 rtx src = gen_rtx_MEM(
                     SImode,
                     gen_rtx_fmt_ee(
                         PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
-                emit_move_insn(gen_rtx_REG(SImode, regno), src);
+                reg = gen_rtx_REG(SImode, regno);
+                insn = emit_move_insn(reg, src);
             } else if (REGNO_REG_CLASS(regno) == FPR_REGS) {
                 offset -= 8;
                 rtx src = gen_rtx_MEM(
                     DFmode,
                     gen_rtx_fmt_ee(
                         PLUS, SImode, stack_pointer_rtx, GEN_INT(offset)));
-                emit_move_insn(gen_rtx_REG(DFmode, regno), src);
+                reg = gen_rtx_REG(DFmode, regno);
+                insn = emit_move_insn(reg, src);
             } else {
                 gcc_unreachable();
             }
+            toy_set_cfa_restore(reg, insn);
         }
     }
-    emit_move_insn(
+    rtx insn = emit_move_insn(
         stack_pointer_rtx,
         gen_rtx_fmt_ee(
             PLUS, SImode, stack_pointer_rtx, GEN_INT(toy_stack_size)));
-    // RTX_FRAME_RELATED_P(insn) = 1;
+    toy_set_def_cfa_offset(0, insn);
     emit_jump_insn(gen_return());
-    // RTX_FRAME_RELATED_P(insn) = 1;
 }
 
 static void toy_function_arg_advance(

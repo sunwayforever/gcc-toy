@@ -23,7 +23,7 @@ RUN_APP := $(patsubst %.elf, %,${RUN_ELF})
 
 CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
-			-D__riscv -D__riscv_xlen=32
+			-D__riscv -D__riscv_xlen=32 -g -fdwarf2-cfi-asm
 
 ifeq (${RISCV}, 1)
 CC1 := ../build_riscv/gcc/cc1
@@ -41,7 +41,7 @@ endif
 
 ${TEST_ASM}:%.s:%.c
 ifeq (${GDB}, 1)
-	gdb.sh -e ${CC1} -a "${CC1FLAGS} -O0 $< -o $@ ${DEBUG_FLAG}"
+	./gdb.sh -e ${CC1} -a "${CC1FLAGS} -O0 $< -o $@ ${DEBUG_FLAG}"
 else
 	${CC1} ${CC1FLAGS} -O0 $< -o $@ ${DEBUG_FLAG}
 endif
@@ -51,10 +51,14 @@ ${RUN_ELF}:%.elf:%.s
 		$^ -O0 -o $@ -static -lm
 
 ${RUN_APP}:%:%.elf
+ifeq (${GDB}, 2)
+	./qemu-gdb.sh $<
+else
 	qemu-riscv32 $<
+endif
 
 ${TEST_OBJ}:%.o:%.s
-	${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -c -o $@ $< && \
+	${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -c -o $@ $< && \
 		${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-objdump -d $@
 
 ${TEST_ASM}:FORCE
@@ -69,7 +73,7 @@ clean:
 FORCE:
 
 gcc:FORCE
-	./toy_build.sh
+	DEFAULT_ASSEMBLER=${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as ./toy_build.sh
 
 riscv:FORCE
 	./riscv_build.sh

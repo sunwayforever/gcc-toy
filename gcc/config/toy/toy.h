@@ -164,4 +164,8 @@ typedef struct {
 #define SMALL_OPERAND(VALUE) \
     ((unsigned HOST_WIDE_INT)(VALUE) + IMM_REACH / 2 < IMM_REACH)
 
+#define INCOMING_RETURN_ADDR_RTX gen_rtx_REG(VOIDmode, RETURN_ADDR_REGNUM)
+#define DWARF_FRAME_REGNUM(REGNO) \
+  (GP_REG_P (REGNO) || FP_REG_P (REGNO) ? REGNO : INVALID_REGNUM)
+
 #endif  // TOY_H
