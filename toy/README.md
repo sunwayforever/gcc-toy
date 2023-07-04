@@ -25,3 +25,7 @@ $> make gcc
 $> make 
 $> make run
 ```
+
+### documentation
+
+https://pages.dogdog.run/toolchain/gcc_toy_riscv_backend.html
