@@ -298,6 +298,7 @@ void toy_expand_fp_brcc(rtx *operands) {
 }
 
 static int toy_stack_size;
+static int toy_csr_size;
 
 static bool toy_save_reg_p(unsigned int regno) {
     bool call_saved = !global_regs[regno] && !call_used_or_fixed_reg_p(regno);
@@ -314,26 +315,27 @@ static void toy_compute_frame(void) {
     toy_stack_size = 0;
     toy_stack_size += TOY_STACK_ALIGN(crtl->outgoing_args_size);
     toy_stack_size += TOY_STACK_ALIGN(get_frame_size());
-    int csr_size = 0;
+    toy_csr_size = 0;
     for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
         if (toy_save_reg_p(regno)) {
             if (REGNO_REG_CLASS(regno) == GPR_REGS) {
-                csr_size += 4;
+                toy_csr_size += 4;
             } else if (REGNO_REG_CLASS(regno) == FPR_REGS) {
-                csr_size += 8;
+                toy_csr_size += 8;
             } else {
                 gcc_unreachable();
             }
         }
     }
-    toy_stack_size += TOY_STACK_ALIGN(csr_size);
+    toy_csr_size = TOY_STACK_ALIGN(toy_csr_size);
+    toy_stack_size += toy_csr_size;
 }
 
 HOST_WIDE_INT
 toy_initial_elimination_offset(int from, int ARG_UNUSED(to)) {
     toy_compute_frame();
     if (from == FRAME_POINTER_REGNUM) {
-        return -toy_stack_size;
+        return -toy_csr_size;
     } else if (from == ARG_POINTER_REGNUM) {
         return 0;
     }
@@ -350,9 +352,8 @@ void toy_set_cfa_offset(int regno, int offset, rtx insn) {
     RTX_FRAME_RELATED_P(insn) = 1;
 }
 
-void toy_set_def_cfa_offset(int offset, rtx insn) {
-    rtx cfa_adjust_rtx =
-        gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(offset));
+void toy_set_def_cfa_offset(int offset, rtx insn, rtx reg) {
+    rtx cfa_adjust_rtx = gen_rtx_PLUS(Pmode, reg, GEN_INT(offset));
     rtx dwarf = alloc_reg_note(REG_CFA_DEF_CFA, cfa_adjust_rtx, NULL_RTX);
     REG_NOTES(insn) = dwarf;
     RTX_FRAME_RELATED_P(insn) = 1;
@@ -375,7 +376,7 @@ void toy_expand_prologue() {
         stack_pointer_rtx,
         gen_rtx_fmt_ee(
             PLUS, SImode, stack_pointer_rtx, GEN_INT(-toy_stack_size)));
-    toy_set_def_cfa_offset(toy_stack_size, insn);
+    toy_set_def_cfa_offset(toy_stack_size, insn, stack_pointer_rtx);
 
     // NOTE: save CSRs
     int offset = toy_stack_size;
@@ -403,8 +404,11 @@ void toy_expand_prologue() {
         }
     }
     // NOTE: set fp
-    emit_insn(gen_add3_insn(
+    insn = emit_insn(gen_add3_insn(
         hard_frame_pointer_rtx, stack_pointer_rtx, GEN_INT(toy_stack_size)));
+    if (cfun->calls_alloca) {
+        toy_set_def_cfa_offset(0, insn, hard_frame_pointer_rtx);
+    }
 }
 
 void toy_expand_epilogue() {
@@ -439,7 +443,7 @@ void toy_expand_epilogue() {
         stack_pointer_rtx,
         gen_rtx_fmt_ee(
             PLUS, SImode, stack_pointer_rtx, GEN_INT(toy_stack_size)));
-    toy_set_def_cfa_offset(0, insn);
+    toy_set_def_cfa_offset(0, insn, stack_pointer_rtx);
     emit_jump_insn(gen_return());
 }
 

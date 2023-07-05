@@ -114,6 +114,9 @@ typedef struct {
 #define STRICT_ALIGNMENT 1
 #define ACCUMULATE_OUTGOING_ARGS 1
 
+#define STACK_GROWS_DOWNWARD 1
+#define FRAME_GROWS_DOWNWARD 1
+
 #define TOY_STACK_ALIGN(LOC)                          \
     (((LOC) + ((PREFERRED_STACK_BOUNDARY / 8) - 1)) & \
      -(PREFERRED_STACK_BOUNDARY / 8))
