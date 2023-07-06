@@ -4,6 +4,10 @@
 (define_mode_iterator ANYI [QI HI SI])
 (define_mode_iterator SHORT [QI HI])
 (define_mode_iterator ANYF [SF DF])
+(define_mode_iterator ANYVI [V4SI V8HI V16QI])
+
+(define_mode_attr vsize [(V4SI "32") (V8HI "16") (V16QI "8")])
+(define_mode_attr vlen [(V4SI "4") (V8HI "8") (V16QI "16")])
 
 (define_mode_attr size [(QI "b") (HI "h")])
 (define_mode_attr fmt [(SF "s") (DF "d")])
@@ -32,6 +36,22 @@
   (lt "lt")
   (le "le")
   (eq "eq")
+  ])
+
+(define_code_attr voptab [
+  (plus "add")
+  (minus "sub")
+  (and "and")
+  (ior "ior")
+  (xor "xor")
+  (mult "mul")
+  (div "div")
+  (udiv "udiv")
+  (ashift "vashl")
+  (ashiftrt "vashr")
+  (lshiftrt "vlshr")
+  (mod "mod")
+  (umod "umod")
   ])
 
 (define_code_attr insn [
@@ -93,6 +113,16 @@
   }
   )
 
+(define_expand "mov<ANYVI:mode>"
+    [(set (match_operand:ANYVI 0 "general_operand")
+	      (match_operand:ANYVI 1 "general_operand"))]
+  ""
+  {
+    if (toy_legitimize_move(operands[0], operands[1]))
+        DONE;
+  }
+  )
+
 (define_expand "mov<ANYF:mode>"
     [(set (match_operand:ANYF 0 "general_operand" "=f" )
 	      (match_operand:ANYF 1 "general_operand" "f"))]
@@ -109,8 +139,8 @@
   ""
   "@
    fmv.<fmt>\t%0, %1
-   <load>\t\%0, %1
-   <store>\t\%1, %0
+   <load>\t%0, %1
+   <store>\t%1, %0
    fmv.x.w\t%0, %1
    fmv.w.x\t%0, %1"
   )
@@ -121,10 +151,39 @@
   ""
   "@
    mv\t%0, %1
-   <load>\t\%0, %1
-   <store>\t\%1, %0
+   <load>\t%0, %1
+   <store>\t%1, %0
    li\t%0,%1"
   )
+
+(define_insn "*mov<ANYVI:mode>"
+    [(set (match_operand:ANYVI 0 "nonimmediate_operand" "=v,v,m")
+	      (match_operand:ANYVI 1 "general_operand" "v,m,v"))]
+  ""
+  "@
+   vmv.v.v\t%0, %1
+   vsetivli zero,<vlen>,e<vsize>,m1,ta,ma\n\tvle<vsize>.v\t%0, %1
+   vsetivli zero,<vlen>,e<vsize>,m1,ta,ma\n\tvse<vsize>.v\t%1, %0"
+  )
+
+(define_insn "<voptab><ANYVI:mode>3"
+    [(set (match_operand:ANYVI          0 "register_operand" "=v,v" )
+	      (arithi:ANYVI (match_operand:ANYVI 1 "register_operand" "v,v")
+		           (match_operand:ANYVI 2 "arith_operand" "v,I")))]
+  "true"
+  "@
+   vsetivli zero,<vlen>,e<vsize>,m1,ta,ma\n\tv<insn>.vv\t%0,%1,%2
+   vsetivli zero,<vlen>,e<vsize>,m1,ta,ma\n\tv<insn>.vi\t%0,%1,%2"
+  [])
+
+(define_insn "<voptab><ANYVI:mode>3"
+    [(set (match_operand:ANYVI          0 "register_operand" "=v" )
+	      (arith:ANYVI (match_operand:ANYVI 1 "register_operand" "v")
+		           (match_operand:ANYVI 2 "register_operand" "v")))]
+  "true"
+  "@
+   vsetivli zero,<vlen>,e<vsize>,m1,ta,ma\n\tv<insn>.vv\t%0,%1,%2"
+  [])
 
 (define_insn "*storei"
    [(set (match_operand:ANYI 0 "memory_operand")

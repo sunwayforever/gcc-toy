@@ -1,4 +1,5 @@
 (define_register_constraint "f" "FPR_REGS" "A floating-point register")
+(define_register_constraint "v" "VECTOR_REGS" "A vector register")
 
 (define_constraint "I"
   "An I-type 12-bit signed immediate."

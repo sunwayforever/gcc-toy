@@ -5,6 +5,7 @@ GCC_PREFIX ?= /opt/gcc-riscv/
 GDB ?=
 DEBUG ?=
 RISCV ?=
+# ARM ?=
 
 MAIN_SRC := $(shell find ./ -name "*.main.c" -printf '%P\n')
 MAIN_ELF := $(patsubst %.main.c,%.elf,${MAIN_SRC})
@@ -21,22 +22,46 @@ TEST_OBJ := $(patsubst %.c,%.o,${TEST_SRC})
 RUN_ELF := $(patsubst %.c,%.elf,${TEST_SRC})
 RUN_APP := $(patsubst %.elf, %,${RUN_ELF})
 
-CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
-			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
-			-D__riscv -D__riscv_xlen=32 -g -fdwarf2-cfi-asm
-
 ifeq (${RISCV}, 1)
 CC1 := ../build_riscv/gcc/cc1
-CC1FLAGS += -march=rv32g -mabi=ilp32d
+CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
+			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
+			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -march=rv32g -mabi=ilp32d
+LD := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=ilp32d
+AS := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -march=rv32g
+OBJDUMP := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-objdump
+QEMU := /opt/qemu-7.1.0/bin/qemu-riscv32
 ${TEST_ASM}:riscv
+# else ifeq (${ARM}, 1)
+# CC1 := ../build_arm/gcc/cc1
+# CC1FLAGS := -I/usr/aarch64-linux-gnu/include -I/usr/aarch64-linux-gnu/include/linux \
+# 			-I /usr/lib/gcc-cross/aarch64-linux-gnu/9/include/
+# LD := aarch64-linux-gnu-gcc
+# AS := aarch64-linux-gnu-as
+# OBJDUMP := aarch64-linux-gnu-objdump
+# QEMU := /opt/qemu-7.1.0/bin/qemu-aarch64
+# ${TEST_ASM}:arm
 else
 CC1 := ../build/gcc/cc1
+CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
+			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
+			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm
+LD := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=ilp32d
+AS := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -march=rv32gv
+OBJDUMP := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-objdump
+QEMU := /opt/qemu-7.1.0/bin/qemu-riscv32 -cpu rv32,v=true,vlen=128,vext_spec=v1.0
 ${TEST_ASM}:gcc
 endif
 
 DEBUG_FLAG := 2>/dev/null
 ifeq (${DEBUG}, 1)
-	DEBUG_FLAG := -fdump-rtl-all
+	DEBUG_FLAG := -fdump-rtl-all -fdump-tree-all
+endif
+ifeq (${DEBUG}, 2)
+	CC1FLAGS += -g
+endif
+ifeq (${GDB}, 2)
+	CC1FLAGS += -g
 endif
 
 ${TEST_ASM}:%.s:%.c
@@ -46,20 +71,18 @@ else
 	${CC1} ${CC1FLAGS} -O0 $< -o $@ ${DEBUG_FLAG}
 endif
 
-${RUN_ELF}:%.elf:%.s
-	${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=ilp32d \
-		$^ -O0 -o $@ -static -lm
+${RUN_ELF}:%.elf:%.o
+	${LD} $^ -O0 -o $@ -static -lm
 
 ${RUN_APP}:%:%.elf
 ifeq (${GDB}, 2)
 	./qemu-gdb.sh $<
 else
-	qemu-riscv32 $<
+	${QEMU} $<
 endif
 
 ${TEST_OBJ}:%.o:%.s
-	${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -c -o $@ $< && \
-		${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-objdump -d $@
+	${AS} -c -o $@ $< # && ${OBJDUMP} -d $@
 
 ${TEST_ASM}:FORCE
 
@@ -77,3 +100,6 @@ gcc:FORCE
 
 riscv:FORCE
 	./riscv_build.sh
+
+# arm:FORCE
+# 	./arm_build.sh

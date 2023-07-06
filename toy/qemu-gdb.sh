@@ -10,7 +10,7 @@ cat >/tmp/gdb.cmds <<hello
 target remote localhost:12345
 hello
 
-qemu-riscv32 -g 12345 ./$app &
+/opt/qemu-7.1.0/bin/qemu-riscv32 -cpu rv32,v=true,vlen=128,vext_spec=v1.0 -g 12345 ./$app &
 
 qemu_pid=$!
 

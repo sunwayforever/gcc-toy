@@ -3591,6 +3591,7 @@ m32c-*-elf*)
  	;;
 toy-*-*)
 	tm_file="${tm_file} elfos.h"
+    extra_modes=toy/toy-modes.def
 	gnu_ld=yes
 	gas=yes
 	;;

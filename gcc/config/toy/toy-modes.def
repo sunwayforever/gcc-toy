@@ -1,0 +1,1 @@
+VECTOR_MODES (INT, 16);       /*       V16QI V8HI V4SI V2DI */

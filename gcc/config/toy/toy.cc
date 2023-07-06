@@ -40,13 +40,19 @@
 // clang-format on
 
 const enum reg_class toy_regno_to_class[FIRST_PSEUDO_REGISTER] = {
-    GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS,   GPR_REGS,   GPR_REGS,
-    GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS,   GPR_REGS,   GPR_REGS,
-    GPR_REGS, GPR_REGS, GPR_REGS, GPR_REGS,
+    GPR_REGS,    GPR_REGS,    GPR_REGS,    GPR_REGS,    GPR_REGS,
+    GPR_REGS,    GPR_REGS,    GPR_REGS,    GPR_REGS,    GPR_REGS,
+    GPR_REGS,    GPR_REGS,    GPR_REGS,    GPR_REGS,    GPR_REGS,
+    GPR_REGS,    GPR_REGS,    GPR_REGS,
 
-    FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS,   FPR_REGS,   FPR_REGS,
-    FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS,   FPR_REGS,   FPR_REGS,
-    FPR_REGS, FPR_REGS, FPR_REGS, FPR_REGS, FRAME_REGS, FRAME_REGS,
+    FPR_REGS,    FPR_REGS,    FPR_REGS,    FPR_REGS,    FPR_REGS,
+    FPR_REGS,    FPR_REGS,    FPR_REGS,    FPR_REGS,    FPR_REGS,
+    FPR_REGS,    FPR_REGS,    FPR_REGS,    FPR_REGS,    FPR_REGS,
+    FPR_REGS,    FPR_REGS,    FPR_REGS,    FRAME_REGS,  FRAME_REGS,
+
+    VECTOR_REGS, VECTOR_REGS, VECTOR_REGS, VECTOR_REGS, VECTOR_REGS,
+    VECTOR_REGS, VECTOR_REGS, VECTOR_REGS, VECTOR_REGS, VECTOR_REGS,
+    VECTOR_REGS, VECTOR_REGS, VECTOR_REGS, VECTOR_REGS,
 };
 
 void toy_asm_out_constructor(rtx symbol, int priority) {}
@@ -119,19 +125,20 @@ static bool toy_can_eliminate(const int from ATTRIBUTE_UNUSED, const int to) {
 
 #define TARGET_CAN_ELIMINATE toy_can_eliminate
 
-static rtx legitimize_memory_address(rtx x) {
+static rtx legitimize_memory_address(machine_mode mode, rtx x) {
     if (!can_create_pseudo_p()) {
         return x;
     }
     switch (GET_CODE(x)) {
         case PLUS: {
             rtx tmp = gen_reg_rtx(GET_MODE(x));
-            rtx a = legitimize_memory_address(XEXP(x, 0));
+            rtx a = legitimize_memory_address(GET_MODE(x), XEXP(x, 0));
             rtx b = XEXP(x, 1);
             if (GET_CODE(XEXP(x, 1)) != CONST_INT) {
-                b = legitimize_memory_address(XEXP(x, 1));
+                b = legitimize_memory_address(GET_MODE(x), XEXP(x, 1));
             }
-            if (a == XEXP(x, 0) && b == XEXP(x, 1)) {
+            if (a == XEXP(x, 0) && b == XEXP(x, 1) &&
+                GET_MODE_CLASS(mode) != MODE_VECTOR_INT) {
                 return x;
             }
             emit_insn(gen_add3_insn(tmp, a, b));
@@ -151,7 +158,7 @@ static rtx legitimize_memory_address(rtx x) {
             return tmp;
         }
         case CONST: {
-            return legitimize_memory_address(XEXP(x, 0));
+            return legitimize_memory_address(GET_MODE(x), XEXP(x, 0));
         }
         case CONST_INT: {
             rtx tmp = gen_reg_rtx(SImode);
@@ -171,13 +178,13 @@ bool toy_legitimize_move(rtx dst, rtx src) {
     bool legitimize = false;
     machine_mode mode = GET_MODE(dst);
     if (GET_CODE(dst) == MEM) {
-        rtx tmp = legitimize_memory_address(XEXP(dst, 0));
+        rtx tmp = legitimize_memory_address(mode, XEXP(dst, 0));
         if (tmp != XEXP(dst, 0)) {
             XEXP(dst, 0) = tmp;
             legitimize = true;
         }
         if (GET_CODE(src) != MEM) {
-            rtx tmp = legitimize_memory_address(src);
+            rtx tmp = legitimize_memory_address(mode, src);
             if (tmp != src) {
                 src = tmp;
                 legitimize = true;
@@ -185,7 +192,7 @@ bool toy_legitimize_move(rtx dst, rtx src) {
         }
     }
     if (GET_CODE(src) == MEM) {
-        rtx tmp = legitimize_memory_address(XEXP(src, 0));
+        rtx tmp = legitimize_memory_address(mode, XEXP(src, 0));
         if (tmp != XEXP(src, 0)) {
             XEXP(src, 0) = tmp;
             legitimize = true;
@@ -531,9 +538,18 @@ static bool toy_hard_regno_mode_ok(unsigned int regno, machine_mode mode) {
     if (GP_REG_P(regno) && (GET_MODE_CLASS(mode) != MODE_INT)) {
         return false;
     }
+    if (VECTOR_REG_P(regno) && (GET_MODE_CLASS(mode) != MODE_VECTOR_INT)) {
+        return false;
+    }
     return true;
 }
 
 #define TARGET_HARD_REGNO_MODE_OK toy_hard_regno_mode_ok
+
+static bool toy_vector_mode_supported_p(machine_mode mode) {
+    return mode == V4SImode || V8HImode || mode == V16QImode;
+}
+
+#define TARGET_VECTOR_MODE_SUPPORTED_P toy_vector_mode_supported_p
 
 struct gcc_target targetm = TARGET_INITIALIZER;
