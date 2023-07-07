@@ -491,6 +491,17 @@ rtx toy_function_value(
 
 #define TARGET_FUNCTION_VALUE toy_function_value
 
+static rtx toy_libcall_value(
+    machine_mode mode, const_rtx func ATTRIBUTE_UNUSED) {
+    if (FLOAT_MODE_P(mode)) {
+        return gen_rtx_REG(mode, FP_ARG_FIRST);
+    } else {
+        return gen_rtx_REG(mode, GP_ARG_FIRST);
+    }
+}
+
+#define TARGET_LIBCALL_VALUE toy_libcall_value
+
 static bool toy_legitimate_constant_p(
     machine_mode mode ATTRIBUTE_UNUSED, rtx x) {
     switch (GET_CODE(x)) {

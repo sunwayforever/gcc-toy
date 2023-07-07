@@ -45,9 +45,9 @@ else
 CC1 := ../build/gcc/cc1
 CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
-			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm
+			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -mzbb
 LD := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=ilp32d
-AS := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -march=rv32gv
+AS := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -march=rv32gv_zbb
 OBJDUMP := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-objdump
 QEMU := /opt/qemu-7.1.0/bin/qemu-riscv32 -cpu rv32,v=true,vlen=128,vext_spec=v1.0
 ${TEST_ASM}:gcc
