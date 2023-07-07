@@ -1,3 +1,7 @@
 mzbb
 Target Mask(ZBB)
 support zbb extension
+
+mhard-float
+Target Mask(HARD_FLOAT)
+support f/d extension

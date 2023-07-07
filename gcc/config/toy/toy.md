@@ -93,7 +93,7 @@
     [(set (match_operand:ANYF          0 "register_operand" "=f")
 	      (arithf:ANYF (match_operand:ANYF 1 "register_operand" "f")
 		           (match_operand:ANYF 2 "register_operand" "f")))]
-  ""
+  "TARGET_HARD_FLOAT"
   "f<insn>.<fmt>\t%0,%1,%2"
   [])
 
@@ -126,7 +126,7 @@
 (define_expand "mov<ANYF:mode>"
     [(set (match_operand:ANYF 0 "general_operand" "=f" )
 	      (match_operand:ANYF 1 "general_operand" "f"))]
-  ""
+  "TARGET_HARD_FLOAT"
   {
     if (toy_legitimize_move(operands[0], operands[1]))
         DONE;
@@ -136,7 +136,7 @@
 (define_insn "*mov<mode>"
     [(set (match_operand:ANYF 0 "nonimmediate_operand" "=f,f,m,r,f")
 	      (match_operand:ANYF 1 "general_operand" "f,m,f,f,r"))]
-  ""
+  "TARGET_HARD_FLOAT"
   "@
    fmv.<fmt>\t%0, %1
    <load>\t%0, %1
@@ -215,7 +215,7 @@
 	(match_operator:SI 1 "fp_order_operator"
 	    [(match_operand:ANYF 2 "register_operand" "f")
 	     (match_operand:ANYF 3 "register_operand" "f")]))]
-  ""
+  "TARGET_HARD_FLOAT"
   {
     toy_expand_fp_scc (operands[0], GET_CODE (operands[1]), operands[2],
 			operands[3]);
@@ -227,7 +227,7 @@
 	(cmpf:SI
 	 (match_operand:ANYF 1 "register_operand" "f")
      (match_operand:ANYF 2 "register_operand" "f")))]
-  ""
+  "TARGET_HARD_FLOAT"
   "f<optab>.<fmt>\t%0,%1,%2"
   [])
 
@@ -264,13 +264,15 @@
 (define_insn "cbranchsi4"
   [(set (pc)
 	(if_then_else (match_operator 0 "comparison_operator"
-		      [(match_operand:SI 1 "register_operand")
-		       (match_operand:SI 2 "register_operand")])
+		      [(match_operand:SI 1 "register_operand" "r,r")
+		       (match_operand:SI 2 "register_or_zero_operand" "r,J")])
 		      (label_ref (match_operand 3 ""))
 		      (pc)))]
   ""
-  "b%C0\t%1,%2,%3"
-  )
+  "@
+  b%C0\t%1,%2,%3
+  b%C0\t%1,zero,%3"
+  [])
 
 (define_expand "cbranch<mode>4"
   [(set (pc)
@@ -279,7 +281,7 @@
 		       (match_operand:ANYF 2 "register_operand")])
 		      (label_ref (match_operand 3 ""))
 		      (pc)))]
-  ""
+  "TARGET_HARD_FLOAT"
   {
       toy_expand_fp_brcc (operands);
   }
@@ -319,7 +321,8 @@
 
 (define_insn "call"
   [(call (match_operand:SI 0 "memory_operand" "")
-		(match_operand 1 "general_operand" ""))]
+		(match_operand 1 "general_operand" ""))
+  (clobber (reg:SI 1))]
   ""
   "call %0"
   )
@@ -327,7 +330,8 @@
 (define_insn "call_value"
     [(set (match_operand 0 "register_operand")
 	      (call (match_operand:SI 1 "memory_operand")
-	            (match_operand 2 "general_operand")))]
+	            (match_operand 2 "general_operand")))
+    (clobber (reg:SI 1))]
   ""
   "call %1")
 
@@ -335,7 +339,7 @@
   [(set (match_operand:DF     0 "register_operand" "=f")
 	(float_extend:DF
 	    (match_operand:SF 1 "register_operand" "f")))]
-  ""
+  "TARGET_HARD_FLOAT"
   "fcvt.d.s\t%0,%1"
   [])
 
@@ -343,14 +347,14 @@
   [(set (match_operand:SF     0 "register_operand" "=f")
 	(float_truncate:SF
 	    (match_operand:DF 1 "register_operand" " f")))]
-  ""
+  "TARGET_HARD_FLOAT"
   "fcvt.s.d\t%0,%1"
   [])
 
 (define_insn "abs<mode>2"
   [(set (match_operand:ANYF           0 "register_operand" "=f")
 	(abs:ANYF (match_operand:ANYF 1 "register_operand" " f")))]
-    ""
+  "TARGET_HARD_FLOAT"
   "fabs.<fmt>\t%0,%1"
   [])
 
@@ -358,7 +362,7 @@
   [(set (match_operand:SI      0 "register_operand" "=r")
 	(fix:SI
 	    (match_operand:ANYF 1 "register_operand" " f")))]
-  ""
+  "TARGET_HARD_FLOAT"
   "fcvt.w.<fmt> %0,%1,rtz"
   [])
 
@@ -366,14 +370,14 @@
   [(set (match_operand:ANYF    0 "register_operand" "=f")
 	(float:ANYF
 	    (match_operand:SI 1 "register_operand" "r")))]
-  ""
+  "TARGET_HARD_FLOAT"
   "fcvt.<fmt>.w\t%0,%1"
   [])
 
 (define_insn "neg<mode>2"
   [(set (match_operand:ANYF 0 "register_operand" "=f")
 	(neg:ANYF (match_operand:ANYF 1 "register_operand" " f")))]
-  ""
+  "TARGET_HARD_FLOAT"
   "fneg.<fmt>\t%0,%1"
   [])
 

@@ -1,6 +1,11 @@
 // 2023-06-25 15:21
 #include <assert.h>
 
+void clobber_ra(int temp, float m[2]) {
+    int i = 0;
+    m[i] = (float)(temp / 2);
+}
+
 double foo(float m) {
     float x = m;
     float y = 0.1;

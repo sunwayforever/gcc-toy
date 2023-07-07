@@ -5,7 +5,15 @@ GCC_PREFIX ?= /opt/gcc-riscv/
 GDB ?=
 DEBUG ?=
 RISCV ?=
+SOFT_FLOAT ?=
 # ARM ?=
+ifeq (${SOFT_FLOAT}, 1)
+	ARCH := rv32im
+	ABI := ilp32
+else
+	ARCH := rv32g
+	ABI := ilp32d
+endif
 
 MAIN_SRC := $(shell find ./ -name "*.main.c" -printf '%P\n')
 MAIN_ELF := $(patsubst %.main.c,%.elf,${MAIN_SRC})
@@ -26,8 +34,8 @@ ifeq (${RISCV}, 1)
 CC1 := ../build_riscv/gcc/cc1
 CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
-			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -march=rv32g -mabi=ilp32d
-LD := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=ilp32d
+			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -march=${ARCH} -mabi=${ABI}
+LD := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=${ABI}
 AS := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -march=rv32g
 OBJDUMP := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-objdump
 QEMU := /opt/qemu-7.1.0/bin/qemu-riscv32
@@ -46,8 +54,11 @@ CC1 := ../build/gcc/cc1
 CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
 			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -mzbb
-LD := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=ilp32d
-AS := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -march=rv32gv_zbb
+ifneq (${SOFT_FLOAT}, 1)
+	CC1FLAGS += -mhard-float
+endif
+LD := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=${ABI}
+AS := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -march=rv32gv_zbb -mabi=${ABI}
 OBJDUMP := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-objdump
 QEMU := /opt/qemu-7.1.0/bin/qemu-riscv32 -cpu rv32,v=true,vlen=128,vext_spec=v1.0
 ${TEST_ASM}:gcc
@@ -72,7 +83,7 @@ else
 endif
 
 ${RUN_ELF}:%.elf:%.o
-	${LD} $^ -O0 -o $@ -static -lm
+	${LD} $^ -O0 -o $@ -static -lgcc -lm
 
 ${RUN_APP}:%:%.elf
 ifeq (${GDB}, 2)

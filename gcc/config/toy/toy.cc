@@ -463,15 +463,20 @@ static rtx toy_function_arg(
     cumulative_args_t cum_v, const function_arg_info &arg) {
     CUMULATIVE_ARGS *cum = get_cumulative_args(cum_v);
     rtx ret = NULL_RTX;
-    if (FLOAT_MODE_P(arg.mode)) {
+    if (FLOAT_MODE_P(arg.mode) && TARGET_HARD_FLOAT) {
         if (FUNCTION_ARG_REGNO_P(FP_ARG_FIRST + cum->num_fprs)) {
             ret = gen_rtx_REG(arg.mode, FP_ARG_FIRST + cum->num_fprs);
             cum->num_fprs++;
         }
     } else {
         if (FUNCTION_ARG_REGNO_P(GP_ARG_FIRST + cum->num_gprs)) {
+            int num_words =
+                (GET_MODE_SIZE(arg.mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+            if (num_words != 1) {
+                cum->num_gprs += cum->num_gprs & 1;
+            }
             ret = gen_rtx_REG(arg.mode, GP_ARG_FIRST + cum->num_gprs);
-            cum->num_gprs++;
+            cum->num_gprs += num_words;
         }
     }
     return ret;
@@ -482,7 +487,7 @@ static rtx toy_function_arg(
 rtx toy_function_value(
     const_tree valtype, const_tree fntype_or_decl,
     bool outgoing ATTRIBUTE_UNUSED) {
-    if (FLOAT_MODE_P(TYPE_MODE(valtype))) {
+    if (FLOAT_MODE_P(TYPE_MODE(valtype)) && TARGET_HARD_FLOAT) {
         return gen_rtx_REG(TYPE_MODE(valtype), FP_ARG_FIRST);
     } else {
         return gen_rtx_REG(TYPE_MODE(valtype), GP_ARG_FIRST);
@@ -493,7 +498,7 @@ rtx toy_function_value(
 
 static rtx toy_libcall_value(
     machine_mode mode, const_rtx func ATTRIBUTE_UNUSED) {
-    if (FLOAT_MODE_P(mode)) {
+    if (FLOAT_MODE_P(mode) && TARGET_HARD_FLOAT) {
         return gen_rtx_REG(mode, FP_ARG_FIRST);
     } else {
         return gen_rtx_REG(mode, GP_ARG_FIRST);
@@ -563,4 +568,12 @@ static bool toy_vector_mode_supported_p(machine_mode mode) {
 
 #define TARGET_VECTOR_MODE_SUPPORTED_P toy_vector_mode_supported_p
 
+static void toy_conditional_register_usage(void) {
+    if (!TARGET_HARD_FLOAT) {
+        for (int regno = FP_REG_FIRST; regno <= FP_REG_LAST; regno++)
+            fixed_regs[regno] = call_used_regs[regno] = 1;
+    }
+}
+
+#define TARGET_CONDITIONAL_REGISTER_USAGE toy_conditional_register_usage
 struct gcc_target targetm = TARGET_INITIALIZER;
