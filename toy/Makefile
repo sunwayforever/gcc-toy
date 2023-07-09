@@ -53,7 +53,7 @@ else
 CC1 := ../build/gcc/cc1
 CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
-			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -mzbb
+			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -mzbb -fenable-rtl-peephole2
 ifneq (${SOFT_FLOAT}, 1)
 	CC1FLAGS += -mhard-float
 endif

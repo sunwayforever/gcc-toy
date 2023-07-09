@@ -393,3 +393,5 @@
     "TARGET_ZBB"
     "clz\t%0,%1"
     [])
+
+(include "peepholes.md")
