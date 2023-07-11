@@ -66,7 +66,7 @@ endif
 
 DEBUG_FLAG := 2>/dev/null
 ifeq (${DEBUG}, 1)
-	DEBUG_FLAG := -fdump-rtl-all -fdump-tree-all
+	DEBUG_FLAG := -fdump-rtl-all
 endif
 ifeq (${DEBUG}, 2)
 	CC1FLAGS += -g
@@ -75,15 +75,17 @@ ifeq (${GDB}, 2)
 	CC1FLAGS += -g
 endif
 
+CC1FLAGS += -O2
+
 ${TEST_ASM}:%.s:%.c
 ifeq (${GDB}, 1)
-	./gdb.sh -e ${CC1} -a "${CC1FLAGS} -O0 $< -o $@ ${DEBUG_FLAG}"
+	./gdb.sh -e ${CC1} -a "${CC1FLAGS} $< -o $@ ${DEBUG_FLAG}"
 else
-	${CC1} ${CC1FLAGS} -O0 $< -o $@ ${DEBUG_FLAG}
+	${CC1} ${CC1FLAGS} $< -o $@ ${DEBUG_FLAG}
 endif
 
 ${RUN_ELF}:%.elf:%.o
-	${LD} $^ -O0 -o $@ -static -lgcc -lm
+	${LD} $^ -o $@ -static -lgcc -lm
 
 ${RUN_APP}:%:%.elf
 ifeq (${GDB}, 2)
@@ -102,7 +104,7 @@ build:${TEST_ASM}
 run:${RUN_APP}
 
 clean:
-	rm -f ${TEST_ASM} ${TEST_OBJ} ${RUN_ELF} *.c.*
+	rm -f ${TEST_ASM} ${TEST_OBJ} ${RUN_ELF} *.c.*.*
 
 FORCE:
 

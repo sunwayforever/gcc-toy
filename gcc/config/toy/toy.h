@@ -95,7 +95,8 @@ extern const enum reg_class toy_regno_to_class[];
 
 #define FP_REG_P(REGNO) ((unsigned int)((int)(REGNO)-FP_REG_FIRST) < FP_REG_NUM)
 
-#define VECTOR_REG_P(REGNO) ((unsigned int)((int)(REGNO)-VECTOR_REG_FIRST) < VECTOR_REG_NUM)
+#define VECTOR_REG_P(REGNO) \
+    ((unsigned int)((int)(REGNO)-VECTOR_REG_FIRST) < VECTOR_REG_NUM)
 
 #define REGNO_MODE_OK_FOR_BASE_P(REGNO, MODE) GP_REG_P(REGNO)
 
@@ -181,4 +182,5 @@ typedef struct {
 #define DWARF_FRAME_REGNUM(REGNO) \
     (GP_REG_P(REGNO) || FP_REG_P(REGNO) ? REGNO : INVALID_REGNUM)
 
+#define FUNCTION_VALUE_REGNO_P(N) ((N) == GP_REG_FIRST || (N) == FP_REG_FIRST)
 #endif  // TOY_H

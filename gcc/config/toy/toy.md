@@ -324,7 +324,7 @@
 		(match_operand 1 "general_operand" ""))
   (clobber (reg:SI 1))]
   ""
-  "call %0"
+  "jalr\tra, %0"
   )
 
 (define_insn "call_value"
@@ -333,7 +333,7 @@
 	            (match_operand 2 "general_operand")))
     (clobber (reg:SI 1))]
   ""
-  "call %1")
+  "jalr\tra, %1")
 
 (define_insn "extendsfdf2"
   [(set (match_operand:DF     0 "register_operand" "=f")

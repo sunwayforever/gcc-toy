@@ -59,7 +59,13 @@ void toy_asm_out_constructor(rtx symbol, int priority) {}
 void toy_asm_out_destructor(rtx symbol, int priority) {}
 
 static bool toy_legitimate_address_p(machine_mode mode, rtx x, bool strict_p) {
-    return true;
+    if (REG_P(x) || SUBREG_P(x)) {
+        return true;
+    }
+    if (GET_CODE(x) == PLUS && REG_P(XEXP(x, 0)) && CONST_INT_P(XEXP(x, 1))) {
+        return true;
+    }
+    return false;
 }
 
 #undef TARGET_LEGITIMATE_ADDRESS_P
@@ -511,7 +517,7 @@ static bool toy_legitimate_constant_p(
     machine_mode mode ATTRIBUTE_UNUSED, rtx x) {
     switch (GET_CODE(x)) {
         case CONST_INT:
-            return SMALL_OPERAND(INTVAL(x));
+            return true;
         case CONST_DOUBLE:
             return false;
     }
@@ -576,4 +582,14 @@ static void toy_conditional_register_usage(void) {
 }
 
 #define TARGET_CONDITIONAL_REGISTER_USAGE toy_conditional_register_usage
+
+static bool toy_cannot_force_const_mem(
+    machine_mode mode ATTRIBUTE_UNUSED, rtx x) {
+    if (GET_CODE(x) == SYMBOL_REF) {
+        return true;
+    }
+    return false;
+}
+
+#define TARGET_CANNOT_FORCE_CONST_MEM toy_cannot_force_const_mem
 struct gcc_target targetm = TARGET_INITIALIZER;
