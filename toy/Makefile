@@ -6,7 +6,7 @@ GDB ?=
 DEBUG ?=
 RISCV ?=
 SOFT_FLOAT ?=
-# ARM ?=
+ARM ?=
 ifeq (${SOFT_FLOAT}, 1)
 	ARCH := rv32im
 	ABI := ilp32
@@ -30,30 +30,35 @@ TEST_OBJ := $(patsubst %.c,%.o,${TEST_SRC})
 RUN_ELF := $(patsubst %.c,%.elf,${TEST_SRC})
 RUN_APP := $(patsubst %.elf, %,${RUN_ELF})
 
+# COMMON_CC1FLAGS :=
+COMMON_CC1FLAGS := -fenable-tree-vect -ftree-loop-vectorize # -fdump-tree-vect-details
+
 ifeq (${RISCV}, 1)
 CC1 := ../build_riscv/gcc/cc1
 CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
-			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -march=${ARCH} -mabi=${ABI}
+			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -march=${ARCH} -mabi=${ABI} \
+			${COMMON_CC1FLAGS}
 LD := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-gcc -march=rv32g -mabi=${ABI}
 AS := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-as -march=rv32g
 OBJDUMP := ${GCC_PREFIX}/bin/riscv64-unknown-linux-gnu-objdump
 QEMU := /opt/qemu-7.1.0/bin/qemu-riscv32
 ${TEST_ASM}:riscv
-# else ifeq (${ARM}, 1)
-# CC1 := ../build_arm/gcc/cc1
-# CC1FLAGS := -I/usr/aarch64-linux-gnu/include -I/usr/aarch64-linux-gnu/include/linux \
+else ifeq (${ARM}, 1)
+CC1 := ../build_arm/gcc/cc1
+CC1FLAGS := -I/usr/aarch64-linux-gnu/include -I/usr/aarch64-linux-gnu/include/linux \
+			${COMMON_CC1FLAGS}
 # 			-I /usr/lib/gcc-cross/aarch64-linux-gnu/9/include/
-# LD := aarch64-linux-gnu-gcc
-# AS := aarch64-linux-gnu-as
-# OBJDUMP := aarch64-linux-gnu-objdump
-# QEMU := /opt/qemu-7.1.0/bin/qemu-aarch64
-# ${TEST_ASM}:arm
+LD := aarch64-linux-gnu-gcc
+AS := aarch64-linux-gnu-as
+OBJDUMP := aarch64-linux-gnu-objdump
+QEMU := /opt/qemu-7.1.0/bin/qemu-aarch64
+${TEST_ASM}:arm
 else
 CC1 := ../build/gcc/cc1
 CC1FLAGS := -I${GCC_PREFIX}/lib/gcc/riscv64-unknown-linux-gnu/12.2.0/include/ \
 			-I${GCC_PREFIX}/sysroot/usr/include -I${GCC_PREFIX}/sysroot/usr/include/linux \
-			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -mzbb -fenable-rtl-peephole2
+			-D__riscv -D__riscv_xlen=32 -fdwarf2-cfi-asm -mzbb -fenable-rtl-peephole2 ${COMMON_CC1FLAGS}
 ifneq (${SOFT_FLOAT}, 1)
 	CC1FLAGS += -mhard-float
 endif
@@ -112,5 +117,5 @@ gcc:FORCE
 riscv:FORCE
 	./riscv_build.sh
 
-# arm:FORCE
-# 	./arm_build.sh
+arm:FORCE
+	./arm_build.sh

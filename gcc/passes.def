@@ -191,8 +191,8 @@ along with GCC; see the file COPYING3.  If not see
   NEXT_PASS (pass_omp_device_lower);
   NEXT_PASS (pass_omp_target_link);
   NEXT_PASS (pass_adjust_alignment);
-  NEXT_PASS (pass_all_optimizations);
-  PUSH_INSERT_PASSES_WITHIN (pass_all_optimizations)
+  // NEXT_PASS (pass_all_optimizations);
+  // PUSH_INSERT_PASSES_WITHIN (pass_all_optimizations)
       NEXT_PASS (pass_remove_cgraph_callee_edges);
       /* Initial scalar cleanups before alias computation.
 	 They ensure memory accesses are not indirect wherever possible.  */
@@ -369,7 +369,7 @@ along with GCC; see the file COPYING3.  If not see
       /* uncprop replaces constants by SSA names.  This makes analysis harder
 	 and thus it should be run last.  */
       NEXT_PASS (pass_uncprop);
-  POP_INSERT_PASSES ()
+  // POP_INSERT_PASSES ()
   NEXT_PASS (pass_all_optimizations_g);
   PUSH_INSERT_PASSES_WITHIN (pass_all_optimizations_g)
       /* The idea is that with -Og we do not perform any IPA optimization

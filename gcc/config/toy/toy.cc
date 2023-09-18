@@ -576,4 +576,19 @@ static void toy_conditional_register_usage(void) {
 }
 
 #define TARGET_CONDITIONAL_REGISTER_USAGE toy_conditional_register_usage
+
+static machine_mode toy_preferred_simd_mode(scalar_mode mode) {
+    if (mode == SImode) {
+        return V4SImode;
+    }
+    if (mode == HImode) {
+        return V8HImode;
+    }
+    if (mode == QImode) {
+        return V16QImode;
+    }
+    return mode;
+}
+#define TARGET_VECTORIZE_PREFERRED_SIMD_MODE toy_preferred_simd_mode
+
 struct gcc_target targetm = TARGET_INITIALIZER;
